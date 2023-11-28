@@ -1,9 +1,9 @@
 import pathlib
 from datetime import datetime
-from typing import Literal, Type
+from typing import Literal
 
 from absl import logging
-from ml_collections import ConfigDict, config_dict
+from ml_collections import ConfigDict
 
 
 def get_config(mode: Literal["sample", "train"] = None):
