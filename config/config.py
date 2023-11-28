@@ -7,7 +7,6 @@ from ml_collections import ConfigDict, config_dict
 
 
 def get_config(mode: Literal["sample", "train"] = None):
-    
     if mode is None:
         mode = "sample"
         logging.info(f"No mode provided, using '{mode}' as default")
@@ -21,13 +20,18 @@ def get_config(mode: Literal["sample", "train"] = None):
     cfg.target_density = ConfigDict()
     cfg.target_density.name = "hamiltonian_mog2"
 
+    # Wandb
+    cfg.wandb = ConfigDict()
+    cfg.wandb.use = True
+    cfg.wandb.project = "adversarial-involutive-sampler"
+    cfg.wandb.entity = "ricvalp"
+
     # Model
     cfg.kernel = ConfigDict()
     cfg.kernel.num_flow_layers = 5
     cfg.kernel.num_layers = 2
     cfg.kernel.num_hidden = 32
     cfg.kernel.d = 2
-    
 
     cfg.discriminator = ConfigDict()
     cfg.discriminator.num_layers_psi = 3
@@ -35,7 +39,6 @@ def get_config(mode: Literal["sample", "train"] = None):
     cfg.discriminator.num_layers_eta = 3
     cfg.discriminator.num_hidden_eta = 32
     cfg.discriminator.activation = "relu"
-
 
     # Train
     cfg.train = ConfigDict()
@@ -60,5 +63,5 @@ def get_config(mode: Literal["sample", "train"] = None):
 
     if mode == "train":
         cfg.sample = ConfigDict()
-    
+
     return cfg
