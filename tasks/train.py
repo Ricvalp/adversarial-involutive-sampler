@@ -12,12 +12,19 @@ _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
 def main(_):
     cfg = load_cfgs(_TASK_FILE)
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
+    cfg.checkpoint_path.mkdir(parents=True, exist_ok=True)
 
     wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, config=cfg)
 
     density = getattr(densities, cfg.target_density.name)
 
-    trainer = Trainer(cfg=cfg, density=density, wandb_log=cfg.wandb.use, seed=cfg.seed)
+    trainer = Trainer(
+        cfg=cfg,
+        density=density,
+        wandb_log=cfg.wandb.use,
+        checkpoint_path=cfg.checkpoint_path,
+        seed=cfg.seed,
+    )
 
     trainer.train_model()
 

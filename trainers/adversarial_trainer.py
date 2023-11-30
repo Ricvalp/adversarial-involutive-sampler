@@ -1,3 +1,4 @@
+import os
 import time
 from functools import partial
 from pathlib import Path
@@ -7,7 +8,9 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
+import orbax.checkpoint
 from absl import logging
+from flax.training import orbax_utils
 from flax.training.train_state import TrainState
 from torch.utils.data import DataLoader
 
@@ -23,12 +26,17 @@ class Trainer:
         cfg,
         density,
         wandb_log,
+        checkpoint_path,
         seed,
     ):
         self.rng = jax.random.PRNGKey(seed)
         self.cfg = cfg
         self.density = density
         self.wandb_log = wandb_log
+        self.checkpoint_path = os.path.join(
+            checkpoint_path,
+            f"{cfg.target_density.name}_{cfg.train.kernel_learning_rate}_{cfg.seed}",
+        )
         self.init_model()
         self.create_train_steps()
 
@@ -131,12 +139,12 @@ class Trainer:
                     parallel_chains=self.cfg.log.num_parallel_chains,
                     name=f"samples_{epoch_idx}.png",
                 )
+                self.save_model(epoch=epoch_idx, step=i)
 
     def train_model(self):
         for epoch in range(self.cfg.train.num_epochs):
             self.train_epoch(epoch_idx=epoch)
             print(self.L_state.params)
-            # self.save_model(epoch)
 
     def sample(self, rng, n, burn_in, parallel_chains, name):
         kernel_fn = jax.jit(lambda x: self.L_state.apply_fn({"params": self.L_state.params}, x))
@@ -172,6 +180,14 @@ class Trainer:
             wandb.log({"samples": fig})
 
         return samples
+
+    def save_model(self, epoch, step):
+        ckpt = {"L": self.L_state, "D": self.D_state}
+        orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+        save_args = orbax_utils.save_args_from_target(ckpt)
+        orbax_checkpointer.save(
+            os.path.join(self.checkpoint_path, f"{epoch}_{step}"), ckpt, save_args=save_args
+        )
 
 
 def r(y):
