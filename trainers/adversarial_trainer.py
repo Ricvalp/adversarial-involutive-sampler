@@ -131,7 +131,7 @@ class Trainer:
                     }
                 )
 
-            if i % self.cfg.log.plot_every == 0:
+            if i % self.cfg.log.log_every == 0:
                 _, ar = self.sample(
                     rng=self.rng,
                     n=self.cfg.log.num_steps,

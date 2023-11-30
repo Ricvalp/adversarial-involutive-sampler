@@ -48,7 +48,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.train.kernel_learning_rate = 1e-3
     cfg.train.discriminator_learning_rate = 1e-3
     cfg.train.num_resampling_steps = 1000
-    cfg.train.num_resampling_parallel_chains = 100
+    cfg.train.num_resampling_parallel_chains = 1000
     cfg.train.resampling_burn_in = 100
     cfg.train.batch_size = 4096
     cfg.train.num_epochs = 100
@@ -57,7 +57,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Log
     cfg.log = ConfigDict()
-    cfg.log.plot_every = 20
+    cfg.log.log_every = 100
     cfg.log.num_steps = 10000
     cfg.log.num_parallel_chains = 2
     cfg.log.burn_in = 100
