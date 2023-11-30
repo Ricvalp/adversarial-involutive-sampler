@@ -16,6 +16,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_path = pathlib.Path("./checkpoints")
+    cfg.checkpoint_name = "checkpoint_name"
 
     # Target density
     cfg.target_density = ConfigDict()
@@ -56,9 +57,9 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Log
     cfg.log = ConfigDict()
-    cfg.log.plot_every = 10
+    cfg.log.plot_every = 20
     cfg.log.num_steps = 10000
-    cfg.log.num_parallel_chains = 10
+    cfg.log.num_parallel_chains = 2
     cfg.log.burn_in = 100
 
     # Dataset

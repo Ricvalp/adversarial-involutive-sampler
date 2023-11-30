@@ -27,6 +27,7 @@ class Trainer:
         density,
         wandb_log,
         checkpoint_path,
+        checkpoint_name,
         seed,
     ):
         self.rng = jax.random.PRNGKey(seed)
@@ -34,8 +35,7 @@ class Trainer:
         self.density = density
         self.wandb_log = wandb_log
         self.checkpoint_path = os.path.join(
-            checkpoint_path,
-            f"{cfg.target_density.name}_{cfg.train.kernel_learning_rate}_{cfg.seed}",
+            os.path.join(checkpoint_path, cfg.target_density.name), checkpoint_name
         )
         self.init_model()
         self.create_train_steps()
@@ -82,7 +82,7 @@ class Trainer:
 
             return L_state, ar_loss
 
-        self.maximize_AR_step = maximize_AR_step  # jax.jit(maximize_AR_step)
+        self.maximize_AR_step = jax.jit(maximize_AR_step)
 
         def minimize_adversarial_loss_step(L_state, D_state, batch):
             my_loss = lambda phi_params: adversarial_loss(phi_params, D_state, L_state, batch)
@@ -96,12 +96,12 @@ class Trainer:
     def create_data_loader(self, key, epoch_idx):
         key, subkey = jax.random.split(key)
 
-        samples = self.sample(
+        samples, _ = self.sample(
             rng=subkey,
             n=self.cfg.train.num_resampling_steps,
             burn_in=self.cfg.train.resampling_burn_in,
             parallel_chains=self.cfg.train.num_resampling_parallel_chains,
-            name=f"samples_in_data_loader_epoch_{epoch_idx}.png",
+            name=None,  # f"samples_in_data_loader_epoch_{epoch_idx}.png",
         )
 
         dataset = SamplesDataset(np.array(samples))
@@ -132,25 +132,27 @@ class Trainer:
                 )
 
             if i % self.cfg.log.plot_every == 0:
-                self.sample(
+                _, ar = self.sample(
                     rng=self.rng,
                     n=self.cfg.log.num_steps,
                     burn_in=self.cfg.log.burn_in,
                     parallel_chains=self.cfg.log.num_parallel_chains,
-                    name=f"samples_{epoch_idx}.png",
+                    name=None,  # f"samples_{epoch_idx}.png",
                 )
                 self.save_model(epoch=epoch_idx, step=i)
+
+                if self.wandb_log is not None:
+                    wandb.log({"acceptance rate": ar})
 
     def train_model(self):
         for epoch in range(self.cfg.train.num_epochs):
             self.train_epoch(epoch_idx=epoch)
-            print(self.L_state.params)
 
     def sample(self, rng, n, burn_in, parallel_chains, name):
         kernel_fn = jax.jit(lambda x: self.L_state.apply_fn({"params": self.L_state.params}, x))
         logging.info("Sampling...")
         start_time = time.time()
-        samples = metropolis_hastings_with_momentum(
+        samples, ar = metropolis_hastings_with_momentum(
             kernel=kernel_fn,
             density=self.density,
             d=self.cfg.kernel.d,
@@ -174,12 +176,13 @@ class Trainer:
             s=0.5,
             c="red",
             alpha=0.05,
+            ar=ar,
         )
 
         if self.wandb_log is not None:
-            wandb.log({"samples": fig})
+            wandb.log({f"samples with {parallel_chains} chains": fig})
 
-        return samples
+        return samples, ar
 
     def save_model(self, epoch, step):
         ckpt = {"L": self.L_state, "D": self.D_state}

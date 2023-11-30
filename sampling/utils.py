@@ -35,7 +35,9 @@ def get_hamiltonian_density_image(
     return Z_p, Z_q
 
 
-def plot_samples_with_momentum(samples, target_density, q_0=0.0, q_1=0.0, name=None, **kwargs):
+def plot_samples_with_momentum(
+    samples, target_density, q_0=0.0, q_1=0.0, name=None, ar=0, **kwargs
+):
     xlim_q = jnp.max(jnp.abs(samples[:, 0])) + 1.5
     ylim_q = jnp.max(jnp.abs(samples[:, 1])) + 1.5
     xlim_p = jnp.max(jnp.abs(samples[:, 2])) + 1.5
@@ -46,6 +48,8 @@ def plot_samples_with_momentum(samples, target_density, q_0=0.0, q_1=0.0, name=N
     )
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+
+    fig.suptitle(f"Acceptance rate: {ar:.3}")
     ax[0].imshow(Z_q, extent=(-xlim_q, xlim_q, -ylim_q, ylim_q), origin="lower", cmap="viridis")
     ax[0].scatter(samples[:, 0], samples[:, 1], **kwargs)
     ax[0].set_title("q")
