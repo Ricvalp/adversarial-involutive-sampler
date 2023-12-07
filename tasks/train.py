@@ -12,7 +12,7 @@ _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
 def main(_):
     cfg = load_cfgs(_TASK_FILE)
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
-    cfg.checkpoint_path.mkdir(parents=True, exist_ok=True)
+    cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, config=cfg)
 

@@ -31,7 +31,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     # Wandb
     cfg.wandb = ConfigDict()
     cfg.wandb.use = True
-    cfg.wandb.project = "adversarial-involutive-sampler"
+    cfg.wandb.project = "adversarial-involutive-sampler-ring"
     cfg.wandb.entity = "ricvalp"
 
     # Kernel

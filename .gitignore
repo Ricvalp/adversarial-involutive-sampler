@@ -2,6 +2,7 @@ figures
 outputs
 checkpoints
 testing_normalizing_flows
+old_checkpoints
 .vscode
 
 # Byte-compiled / optimized / DLL files

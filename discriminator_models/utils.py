@@ -46,6 +46,7 @@ def plot_discriminator(
     if name is not None:
         plt.savefig(f"{name}.png")
     plt.show()
+    return fig
 
 
 def get_discriminator_function(
@@ -123,3 +124,39 @@ def create_simple_discriminator_without_kernel(
         ),
         d=d,
     )
+
+
+def log_plot(
+    discriminator_parameters,
+    num_layers_psi: int,
+    num_hidden_psi: int,
+    num_layers_eta: int,
+    num_hidden_eta: int,
+    activation: str,
+    d: int,
+    name=None,
+):
+    discriminator_fn = get_discriminator_function(
+        discriminator_parameters,
+        num_layers_psi,
+        num_hidden_psi,
+        num_layers_eta,
+        num_hidden_eta,
+        activation,
+        d,
+    )
+
+    fig = plot_discriminator(
+        discriminator_fn,
+        xlim_q=6,
+        ylim_q=6,
+        xlim_p=6,
+        ylim_p=6,
+        n=100,
+        x_0=jnp.array([0.0, 0.0]),
+        p_0=0.0,
+        p_1=0.0,
+        name=name,
+    )
+
+    return fig

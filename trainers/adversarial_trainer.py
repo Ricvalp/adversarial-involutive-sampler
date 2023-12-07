@@ -13,7 +13,7 @@ from flax.training.train_state import TrainState
 from torch.utils.data import DataLoader
 
 import wandb
-from discriminator_models import create_simple_discriminator
+from discriminator_models import create_simple_discriminator, log_plot
 from sampling import metropolis_hastings_with_momentum, plot_samples_with_momentum
 from trainers.utils import SamplesDataset, numpy_collate
 
@@ -30,15 +30,16 @@ class Trainer:
     ):
         self.rng = jax.random.PRNGKey(seed)
 
-        self.cfg = cfg
-        with open(os.path.join(self.checkpoint_path, "cfg.txt"), "w") as f:
-            f.write(str(cfg))
-
         self.density = density
         self.wandb_log = wandb_log
         self.checkpoint_path = os.path.join(
             os.path.join(checkpoint_dir, cfg.target_density.name), checkpoint_name
         )
+
+        self.cfg = cfg
+        with open(os.path.join(self.checkpoint_path, "cfg.txt"), "w") as f:
+            f.write(str(cfg))
+
         self.init_model()
         self.create_train_steps()
 
@@ -148,6 +149,18 @@ class Trainer:
 
                 if self.wandb_log is not None:
                     wandb.log({"acceptance rate": ar})
+
+                    fig = log_plot(
+                        discriminator_parameters=self.D_state.params,
+                        num_layers_psi=self.cfg.discriminator.num_layers_psi,
+                        num_hidden_psi=self.cfg.discriminator.num_hidden_psi,
+                        num_layers_eta=self.cfg.discriminator.num_layers_eta,
+                        num_hidden_eta=self.cfg.discriminator.num_hidden_eta,
+                        activation=self.cfg.discriminator.activation,
+                        d=self.cfg.kernel.d,
+                        name="discriminator",
+                    )
+                    wandb.log({"discriminator": fig})
 
     def train_model(self):
         for epoch in range(self.cfg.train.num_epochs):
