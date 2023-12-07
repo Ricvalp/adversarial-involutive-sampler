@@ -1,5 +1,8 @@
+import time
+
 import jax
 import jax.numpy as jnp
+from absl import logging
 
 
 def mh_kernel_with_momentum(x, key, cov_p, kernel, density, parallel_chains=100):
@@ -47,8 +50,18 @@ def metropolis_hastings_with_momentum(
         axis=1,
     )
 
+    logging.info("Jitting AI kernel...")
+    time_start = time.time()
+    jit_mh_kernel_with_momentum(
+        x, sampling_subkey, cov_p, kernel, density, parallel_chains=parallel_chains
+    )
+    logging.info(f"Jitting done. Time taken: {time.time() - time_start}")
+
     samples = []
     ars = []
+
+    logging.info("Sampling...")
+    time_start = time.time()
     for i in range(n + burn_in):
         x, ar, sampling_subkey = jit_mh_kernel_with_momentum(
             x, sampling_subkey, cov_p, kernel, density, parallel_chains=parallel_chains
@@ -56,5 +69,6 @@ def metropolis_hastings_with_momentum(
         if i >= burn_in:
             samples.append(x)
             ars.append(ar)
+    logging.info(f"Sampling done. Time taken: {time.time() - time_start}")
 
     return jnp.vstack(samples), jnp.array(ars).mean()

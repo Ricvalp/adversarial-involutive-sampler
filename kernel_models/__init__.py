@@ -1,1 +1,2 @@
 from kernel_models.HenonFlow import create_henon_flow
+from kernel_models.utils import get_params_from_checkpoint

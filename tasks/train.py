@@ -22,7 +22,7 @@ def main(_):
         cfg=cfg,
         density=density,
         wandb_log=cfg.wandb.use,
-        checkpoint_path=cfg.checkpoint_path,
+        checkpoint_dir=cfg.checkpoint_dir,
         checkpoint_name=cfg.checkpoint_name,
         seed=cfg.seed,
     )

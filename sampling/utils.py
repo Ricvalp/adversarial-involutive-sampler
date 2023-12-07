@@ -36,7 +36,7 @@ def get_hamiltonian_density_image(
 
 
 def plot_samples_with_momentum(
-    samples, target_density, q_0=0.0, q_1=0.0, name=None, ar=0, **kwargs
+    samples, target_density, q_0=0.0, q_1=0.0, name=None, ar=None, **kwargs
 ):
     xlim_q = jnp.max(jnp.abs(samples[:, 0])) + 1.5
     ylim_q = jnp.max(jnp.abs(samples[:, 1])) + 1.5
@@ -49,7 +49,8 @@ def plot_samples_with_momentum(
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
 
-    fig.suptitle(f"Acceptance rate: {ar:.3}")
+    if ar is not None:
+        fig.suptitle(f"Acceptance rate: {ar:.3}")
     ax[0].imshow(Z_q, extent=(-xlim_q, xlim_q, -ylim_q, ylim_q), origin="lower", cmap="viridis")
     ax[0].scatter(samples[:, 0], samples[:, 1], **kwargs)
     ax[0].set_title("q")
@@ -68,26 +69,31 @@ def plot_samples_with_momentum(
     return fig
 
 
-def get_density_image(density, xlim, ylim, n=100):
+def get_density_image(density, xlim, ylim, d, n=100):
     x = jnp.linspace(-xlim, xlim, n)
     y = jnp.linspace(-ylim, ylim, n)
     X, Y = jnp.meshgrid(x, y)
-    Z = jnp.exp(density(jnp.hstack([X.reshape(-1, 1), Y.reshape(-1, 1)])))
+    Z = jnp.hstack([X.reshape(-1, 1), Y.reshape(-1, 1)])
+    Z = jnp.concatenate([Z, jnp.zeros((n**2, d - 2))], axis=1)
+    Z = jnp.exp(density(Z)).reshape((n, n))
     Z = Z.reshape(X.shape)
 
     return Z
 
 
-def plot_samples(samples, target_density, name=None, **kwargs):
-    xlim = jnp.max(jnp.abs(samples[:, 0])) + 1.5
-    ylim = jnp.max(jnp.abs(samples[:, 1])) + 1.5
+def plot_samples(samples, target_density, d, name=None, ar=None, **kwargs):
+    xlim = jnp.max(jnp.abs(samples[:, 0])) + 3.5
+    ylim = jnp.max(jnp.abs(samples[:, 1])) + 3.5
 
-    Z = get_density_image(target_density, xlim, ylim, n=100)
+    Z = get_density_image(target_density, xlim, ylim, d, n=100)
 
     plt.imshow(Z, extent=(-xlim, xlim, -ylim, ylim), origin="lower", cmap="viridis")
     plt.scatter(samples[:, 0], samples[:, 1], **kwargs)
     plt.xlabel("x1")
     plt.ylabel("x2")
+
+    if ar is not None:
+        plt.title(f"Acceptance rate: {ar:.3}")
 
     if name is not None:
         plt.savefig(name)

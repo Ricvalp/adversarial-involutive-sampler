@@ -15,12 +15,18 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.seed = 43
 
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
-    cfg.checkpoint_path = pathlib.Path("./checkpoints")
-    cfg.checkpoint_name = "checkpoint_name"
+    cfg.checkpoint_dir = pathlib.Path("./checkpoints")
+    cfg.checkpoint_name = "checkpoint_4_2_0"
+
+    # Restore checkpoint
+    cfg.checkpoint_epoch = 7
+    cfg.checkpoint_step = 0
 
     # Target density
     cfg.target_density = ConfigDict()
-    cfg.target_density.name = "hamiltonian_mog2"
+    cfg.target_density.name = "ring5"
+    cfg.target_density.mu = [0.0, 0.0]
+    cfg.target_density.std = [3.0, 3.0]
 
     # Wandb
     cfg.wandb = ConfigDict()
@@ -66,6 +72,17 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.dataset = ConfigDict()
 
     if mode == "sample":
+        # Sample
         cfg.sample = ConfigDict()
+        cfg.sample.d = 2
+        cfg.sample.num_parallel_chains = 1
+        cfg.sample.num_iterations = 5000  # after burn-in
+        cfg.sample.burn_in = 1000
+
+        # HMC
+        cfg.hmc = ConfigDict()
+        cfg.hmc.potential_function_name = "ring5"
+        cfg.hmc.num_steps = 10
+        cfg.hmc.step_size = 0.1
 
     return cfg

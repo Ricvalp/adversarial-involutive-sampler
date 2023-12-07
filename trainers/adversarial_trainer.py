@@ -1,8 +1,6 @@
 import os
 import time
-from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Sequence, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -26,19 +24,25 @@ class Trainer:
         cfg,
         density,
         wandb_log,
-        checkpoint_path,
+        checkpoint_dir,
         checkpoint_name,
         seed,
     ):
         self.rng = jax.random.PRNGKey(seed)
+
         self.cfg = cfg
+        with open(os.path.join(self.checkpoint_path, "cfg.txt"), "w") as f:
+            f.write(str(cfg))
+
         self.density = density
         self.wandb_log = wandb_log
         self.checkpoint_path = os.path.join(
-            os.path.join(checkpoint_path, cfg.target_density.name), checkpoint_name
+            os.path.join(checkpoint_dir, cfg.target_density.name), checkpoint_name
         )
         self.init_model()
         self.create_train_steps()
+
+        # save cfg into checkpoint_path
 
     def init_model(self):
         discriminator = create_simple_discriminator(
@@ -126,6 +130,7 @@ class Trainer:
             if self.wandb_log is not None:
                 wandb.log(
                     {
+                        "Epoch: ": epoch_idx,
                         "AR loss": ar_loss,
                         "adversarial loss": adv_loss,
                     }
@@ -191,6 +196,12 @@ class Trainer:
         orbax_checkpointer.save(
             os.path.join(self.checkpoint_path, f"{epoch}_{step}"), ckpt, save_args=save_args
         )
+
+    def load_model(self, epoch, step):
+        orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+        ckpt = orbax_checkpointer.restore(os.path.join(self.checkpoint_path, f"{epoch}_{step}"))
+        self.L_state = ckpt["L"]
+        self.D_state = ckpt["D"]
 
 
 def r(y):
