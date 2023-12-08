@@ -37,8 +37,6 @@ class Trainer:
         )
 
         self.cfg = cfg
-        with open(os.path.join(self.checkpoint_path, "cfg.txt"), "w") as f:
-            f.write(str(cfg))
 
         self.init_model()
         self.create_train_steps()
@@ -151,7 +149,7 @@ class Trainer:
                     wandb.log({"acceptance rate": ar})
 
                     fig = log_plot(
-                        discriminator_parameters=self.D_state.params,
+                        discriminator_parameters={"params": {"D": self.D_state.params}},
                         num_layers_psi=self.cfg.discriminator.num_layers_psi,
                         num_hidden_psi=self.cfg.discriminator.num_hidden_psi,
                         num_layers_eta=self.cfg.discriminator.num_layers_eta,
@@ -209,6 +207,11 @@ class Trainer:
         orbax_checkpointer.save(
             os.path.join(self.checkpoint_path, f"{epoch}_{step}"), ckpt, save_args=save_args
         )
+
+        # log cfg into checkpoint_path
+        if epoch == 0 and step == 0:
+            with open(os.path.join(self.checkpoint_path, "cfg.txt"), "w") as f:
+                f.write(str(self.cfg))
 
     def load_model(self, epoch, step):
         orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()

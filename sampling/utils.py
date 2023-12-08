@@ -47,21 +47,15 @@ def plot_samples_with_momentum(
         target_density, xlim_q, ylim_q, xlim_p, ylim_p, q_0=q_0, q_1=q_1, n=100
     )
 
-    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 
     if ar is not None:
         fig.suptitle(f"Acceptance rate: {ar:.3}")
-    ax[0].imshow(Z_q, extent=(-xlim_q, xlim_q, -ylim_q, ylim_q), origin="lower", cmap="viridis")
-    ax[0].scatter(samples[:, 0], samples[:, 1], **kwargs)
-    ax[0].set_title("q")
-    ax[0].set_xlabel("q1")
-    ax[0].set_ylabel("q2")
-    ax[1].imshow(Z_p, extent=(-xlim_p, xlim_p, -ylim_p, ylim_p), origin="lower", cmap="viridis")
-    ax[1].scatter(samples[:, 2], samples[:, 3], **kwargs)
-    ax[1].set_title("p")
-    ax[1].set_xlabel("p1")
-    ax[1].set_ylabel("p2")
-
+    ax.imshow(Z_q, extent=(-xlim_q, xlim_q, -ylim_q, ylim_q), origin="lower", cmap="viridis")
+    ax.scatter(samples[:, 0], samples[:, 1], **kwargs)
+    ax.set_title("q")
+    ax.set_xlabel("q1")
+    ax.set_ylabel("q2")
     if name is not None:
         plt.savefig(name)
     plt.show()

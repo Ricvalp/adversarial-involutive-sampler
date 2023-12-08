@@ -24,7 +24,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Target density
     cfg.target_density = ConfigDict()
-    cfg.target_density.name = "ring5"
+    cfg.target_density.name = "hamiltonian_ring5"
     cfg.target_density.mu = [0.0, 0.0]
     cfg.target_density.std = [3.0, 3.0]
 
