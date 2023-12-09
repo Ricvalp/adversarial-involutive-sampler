@@ -39,6 +39,7 @@ def plot_discriminator(
 
     fig, ax = plt.subplots(1, 1, figsize=(5, 5))
     im = ax.imshow(ar, extent=(-xlim_q, xlim_q, -ylim_q, ylim_q), origin="lower", cmap="viridis")
+    ax.scatter(x_0[:, 0], x_0[:, 1], c="red", s=10.0)
     ax.set_title("Discriminator")
     ax.set_xlabel("q1")
     ax.set_ylabel("q2")

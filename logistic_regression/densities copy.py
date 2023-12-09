@@ -4,7 +4,7 @@ from jax import grad
 
 
 def sigmoid(x):
-    return 1 / (1 + jnp.exp(-x) + 1e-6)
+    return 1 / (1 + jnp.exp(-x) + 1e-7)
 
 
 def cond_log_likelihood(t, X, w):
@@ -13,15 +13,13 @@ def cond_log_likelihood(t, X, w):
 
 def log_prior(w, cov):
     d = w.shape[0]
-    return (
-        -0.5
-        * jnp.dot(jnp.dot(w.T, jnp.linalg.inv(cov)), w)
-        * jnp.log(1 / jnp.sqrt(2 * (jnp.pi**d) * jnp.linalg.det(cov)))
+    return -0.5 * jnp.dot(jnp.dot(w.T, jnp.linalg.inv(cov)), w) + jnp.log(
+        1 / jnp.sqrt(2 * (jnp.pi**d) * jnp.linalg.det(cov))
     )
 
 
 def log_posterior(w, t, X, cov):
-    return cond_log_likelihood(t, X, w) + log_prior(w, cov)
+    return -cond_log_likelihood(t, X, w) - log_prior(w, cov)
 
 
 vmap_log_posterior = jax.vmap(log_posterior, in_axes=(0, None, None, None))
@@ -51,9 +49,14 @@ def hamiltonian_logistic_regression(w, t, X, posterior_cov):
     )
 
 
-# X_data = jax.random.normal(jax.random.PRNGKey(1), (100, 14))
-# X = jnp.concatenate([X_data, jnp.ones((X_data.shape[0], 1))], axis=1)
-# w = jax.random.normal(jax.random.PRNGKey(0), (50, 30))
-# t = jax.random.bernoulli(jax.random.PRNGKey(1), p=0.5, shape=(100, 1))
+# from sklearn.datasets import fetch_openml
 
-# hamiltonian_logistic_regression(w, t, X, posterior_cov=jnp.eye(15))
+# # Fetch the heart dataset
+# heart_data = fetch_openml(name='heart', version=1)
+# X_data = heart_data.data.toarray()
+# X_data = normalize_covariates(X_data)
+# X = jnp.concatenate([X_data, jnp.ones((X_data.shape[0], 1))], axis=1)
+# t = heart_data.target
+
+# cond_log_likelihood(t, X, jnp.ones(X.shape[1]))
+# assert True

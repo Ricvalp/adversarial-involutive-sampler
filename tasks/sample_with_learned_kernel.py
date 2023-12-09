@@ -46,15 +46,15 @@ def main(_):
 
     plot_discriminator(
         discriminator_fn,
-        xlim_q=6,
-        ylim_q=6,
-        xlim_p=6,
-        ylim_p=6,
+        xlim_q=3,
+        ylim_q=3,
+        xlim_p=3,
+        ylim_p=3,
         n=100,
         x_0=jnp.array([0.0, 0.0]),
         p_0=0.0,
         p_1=0.0,
-        name=cfg.figure_path / Path("discriminator.png"),
+        name=cfg.figure_path / Path("discriminator"),
     )
 
     kernel = create_henon_flow(
@@ -68,10 +68,10 @@ def main(_):
 
     plot_hamiltonian_density(
         density,
-        xlim_q=6,
-        ylim_q=6,
-        xlim_p=6,
-        ylim_p=6,
+        xlim_q=3,
+        ylim_q=3,
+        xlim_p=3,
+        ylim_p=3,
         n=100,
         q_0=0.0,
         q_1=0.0,

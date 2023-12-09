@@ -76,13 +76,13 @@ def get_config(mode: Literal["train", "sample"] = None):
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
         cfg.sample.num_parallel_chains = 1
-        cfg.sample.num_iterations = 5000  # after burn-in
+        cfg.sample.num_iterations = 10000  # after burn-in
         cfg.sample.burn_in = 1000
 
         # HMC
         cfg.hmc = ConfigDict()
         cfg.hmc.potential_function_name = "ring5"
-        cfg.hmc.num_steps = 10
-        cfg.hmc.step_size = 0.1
+        cfg.hmc.num_steps = 40
+        cfg.hmc.step_size = 0.02
 
     return cfg
