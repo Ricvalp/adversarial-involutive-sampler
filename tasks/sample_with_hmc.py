@@ -8,7 +8,7 @@ from ml_collections import config_flags
 import densities
 from config import load_cfgs
 from densities import plot_hamiltonian_density
-from sampling import hmc, plot_samples_with_momentum
+from sampling import hmc, hmc_debug, plot_samples_with_momentum
 from sampling.metrics import ess
 
 _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
@@ -33,7 +33,7 @@ def main(_):
         name=cfg.figure_path / Path("hamiltonian_density.png"),
     )
 
-    samples, ar = hmc(
+    samples, ar, trs = hmc_debug(
         density=density,
         grad_potential_fn=grad_potential_fn,
         cov_p=jnp.eye(cfg.sample.d),
@@ -60,6 +60,8 @@ def main(_):
         c="red",
         alpha=0.8,
     )
+
+    assert True
 
 
 if __name__ == "__main__":

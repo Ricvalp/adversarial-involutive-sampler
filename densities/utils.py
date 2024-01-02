@@ -45,8 +45,8 @@ def plot_hamiltonian_density(
         ),
         axis=1,
     )
-    Z_q = jnp.exp(density(z_q)).reshape((n, n))
-    Z_p = jnp.exp(density(z_p)).reshape((n, n))
+    Z_q = jnp.exp(-density(z_q)).reshape((n, n))
+    Z_p = jnp.exp(-density(z_p)).reshape((n, n))
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     im_q = ax[0].imshow(

@@ -12,7 +12,7 @@ def get_config(mode: Literal["train", "sample"] = None):
         logging.info(f"No mode provided, using '{mode}' as default")
 
     cfg = ConfigDict()
-    cfg.seed = 43
+    cfg.seed = 42
 
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_dir = pathlib.Path("./checkpoints")
@@ -24,7 +24,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Target density
     cfg.target_density = ConfigDict()
-    cfg.target_density.name = "hamiltonian_ring5"
+    cfg.target_density.name = "hamiltonian_ring"
     cfg.target_density.mu = [0.0, 0.0]
     cfg.target_density.std = [3.0, 3.0]
 
@@ -39,7 +39,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.kernel.num_flow_layers = 5
     cfg.kernel.num_layers = 2
     cfg.kernel.num_hidden = 32
-    cfg.kernel.d = 2
+    cfg.kernel.d = 4
 
     # Discriminator
     cfg.discriminator = ConfigDict()
@@ -70,19 +70,20 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Dataset
     cfg.dataset = ConfigDict()
+    # cfg.dataset.test_split = 150
+    cfg.dataset.num_covariates = 14
 
     if mode == "sample":
         # Sample
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
         cfg.sample.num_parallel_chains = 1
-        cfg.sample.num_iterations = 10000  # after burn-in
+        cfg.sample.num_iterations = 5000  # after burn-in
         cfg.sample.burn_in = 1000
-
         # HMC
         cfg.hmc = ConfigDict()
-        cfg.hmc.potential_function_name = "ring5"
+        cfg.hmc.potential_function_name = "ring"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.02
+        cfg.hmc.step_size = 0.01001
 
     return cfg

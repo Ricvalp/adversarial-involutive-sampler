@@ -12,22 +12,20 @@ def ring5(x):
     u4 = ((jnp.sqrt(x[:, 0] ** 2 + x[:, 1] ** 2) - 4) ** 2) / 0.04
     u5 = ((jnp.sqrt(x[:, 0] ** 2 + x[:, 1] ** 2) - 5) ** 2) / 0.04
 
-    return -jnp.min(jnp.array([u1, u2, u3, u4, u5]), axis=0)
+    return jnp.min(jnp.array([u1, u2, u3, u4, u5]), axis=0)
 
 
-def normal(x, mu, cov):
+def log_normal(x, mu, inv_cov):
     d = x.shape[0]
-    return jnp.exp(-0.5 * jnp.dot(jnp.dot((x - mu).T, jnp.linalg.inv(cov)), (x - mu))) * (
-        1 / jnp.sqrt(2 * (jnp.pi**d) * jnp.linalg.det(cov))
-    )
+    return -0.5 * jnp.dot(jnp.dot((x - mu).T, inv_cov), (x - mu))
 
 
-normal = jax.vmap(normal, in_axes=(0, None, None))
+log_normal = jax.vmap(log_normal, in_axes=(0, None, None))
 
 
-def hamiltonian_ring5(x, cov_p=jnp.eye(2) * 0.5):
+def hamiltonian_ring5(x, inv_cov_p=jnp.eye(2)):
     d = x.shape[1]
-    return ring5(x[:, : d // 2]) + jnp.log(normal(x[:, d // 2 :], jnp.zeros(2), cov_p))
+    return ring5(x[:, : d // 2]) - log_normal(x[:, d // 2 :], jnp.zeros(2), inv_cov_p)
 
 
 def nv_ring5(x):
@@ -37,7 +35,7 @@ def nv_ring5(x):
     u4 = ((jnp.sqrt(x[0] ** 2 + x[1] ** 2) - 4) ** 2) / 0.04
     u5 = ((jnp.sqrt(x[0] ** 2 + x[1] ** 2) - 5) ** 2) / 0.04
 
-    return -jnp.min(jnp.array([u1, u2, u3, u4, u5]), axis=0)
+    return jnp.min(jnp.array([u1, u2, u3, u4, u5]), axis=0)
 
 
-grad_ring5 = jax.jit(jax.vmap(grad(nv_ring5)))
+grad_ring5 = jax.vmap(grad(nv_ring5))

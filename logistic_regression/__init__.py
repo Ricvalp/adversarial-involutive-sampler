@@ -1,6 +1,14 @@
 from logistic_regression.densities import (
-    grad_log_posterior,
-    hamiltonian_logistic_regression,
+    generate_dataset,
+    get_predictions,
+    grad_U,
+    hamiltonian,
     normalize_covariates,
+    plot_density_logistic_regression,
+    plot_gradients_logistic_regression_density,
 )
-from logistic_regression.utils import plot_logistic_regression_samples
+from logistic_regression.utils import (
+    plot_histograms2d_logistic_regression,
+    plot_histograms_logistic_regression,
+    plot_logistic_regression_samples,
+)

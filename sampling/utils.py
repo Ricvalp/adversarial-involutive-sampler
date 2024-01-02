@@ -29,8 +29,8 @@ def get_hamiltonian_density_image(
         ),
         axis=1,
     )
-    Z_q = jnp.exp(density(z_q)).reshape((n, n))
-    Z_p = jnp.exp(density(z_p)).reshape((n, n))
+    Z_q = jnp.exp(-density(z_q)).reshape((n, n))
+    Z_p = jnp.exp(-density(z_p)).reshape((n, n))
 
     return Z_p, Z_q
 
@@ -69,7 +69,7 @@ def get_density_image(density, xlim, ylim, d, n=100):
     X, Y = jnp.meshgrid(x, y)
     Z = jnp.hstack([X.reshape(-1, 1), Y.reshape(-1, 1)])
     Z = jnp.concatenate([Z, jnp.zeros((n**2, d - 2))], axis=1)
-    Z = jnp.exp(density(Z)).reshape((n, n))
+    Z = jnp.exp(-density(Z)).reshape((n, n))
     Z = Z.reshape(X.shape)
 
     return Z
