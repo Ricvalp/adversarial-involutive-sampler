@@ -3,17 +3,20 @@ from pathlib import Path
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from absl import app, logging
 from ml_collections import config_flags
+import pymc3 as pm
+import arviz as av
 
 import densities
 from config import load_cfgs
-from densities import plot_hamiltonian_density
+from densities import plot_hamiltonian_density, plot_hamiltonian_density_only_q
 from discriminator_models import get_discriminator_function, plot_discriminator
 from kernel_models import create_henon_flow
 from kernel_models.utils import get_params_from_checkpoint
-from sampling import metropolis_hastings_with_momentum, plot_samples_with_momentum
-from sampling.metrics import ess
+from sampling import metropolis_hastings_with_momentum, plot_samples_with_density, plot_chain
+from sampling.metrics import ess, gelman_rubin_r
 
 _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
 
@@ -23,6 +26,7 @@ def main(_):
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
 
     density = getattr(densities, cfg.target_density.name)
+    density_statistics = getattr(densities, "statistics_"+cfg.hmc.potential_function_name)
 
     checkpoint_path = os.path.join(
         os.path.join(cfg.checkpoint_dir, cfg.target_density.name), cfg.checkpoint_name
@@ -46,12 +50,12 @@ def main(_):
 
     plot_discriminator(
         discriminator_fn,
-        xlim_q=3,
-        ylim_q=3,
+        xlim_q=6,
+        ylim_q=6,
         xlim_p=3,
         ylim_p=3,
         n=100,
-        x_0=jnp.array([0.0, 0.0]),
+        x_0=jnp.array([6.0, 0.0]),
         p_0=0.0,
         p_1=0.0,
         name=cfg.figure_path / Path("discriminator"),
@@ -66,44 +70,79 @@ def main(_):
 
     kernel_fn = jax.jit(lambda x: kernel.apply(kernel_params, x))
 
-    plot_hamiltonian_density(
+    plot_hamiltonian_density_only_q(
         density,
-        xlim_q=3,
-        ylim_q=3,
-        xlim_p=3,
-        ylim_p=3,
-        n=100,
-        q_0=0.0,
-        q_1=0.0,
-        name=cfg.figure_path / Path("hamiltonian_density.png"),
+        xlim_q=7,
+        ylim_q=7,
+        n=200,
+        name=cfg.figure_path / Path("hamiltonian_density_mog2.png"),
     )
 
-    samples, ar = metropolis_hastings_with_momentum(
-        kernel_fn,
-        density,
-        cov_p=jnp.eye(cfg.kernel.d),
-        d=cfg.kernel.d,
-        parallel_chains=cfg.sample.num_parallel_chains,
-        n=cfg.sample.num_iterations,
-        burn_in=cfg.sample.burn_in,
-        rng=jax.random.PRNGKey(cfg.seed),
-    )
+    average_acceptance_rate = []
+    average_eff_sample_size_x = []
+    average_eff_sample_size_y = []
+    chains = []
 
-    logging.info(f"Acceptance rate: {ar}")
-    logging.info(f"ESS: {ess(samples[:, 0], cfg.target_density.mu[0], cfg.target_density.std[0])}")
+    for i in range(cfg.sample.average_results_over_trials):
 
-    plot_samples_with_momentum(
-        samples,
-        target_density=density,
-        q_0=0.0,
-        q_1=0.0,
-        name=cfg.figure_path / Path("samples.png"),
-        ar=ar,
-        s=4.0,
-        c="red",
-        alpha=0.8,
-    )
+        samples, ar = metropolis_hastings_with_momentum(
+            kernel_fn,
+            density,
+            cov_p=jnp.eye(cfg.kernel.d),
+            d=cfg.kernel.d,
+            parallel_chains=cfg.sample.num_parallel_chains,
+            n=cfg.sample.num_iterations,
+            burn_in=cfg.sample.burn_in,
+            rng=jax.random.PRNGKey(cfg.seed+i),
+        )
 
+        logging.info(f"Acceptance rate: {ar}")
+        average_acceptance_rate.append(ar)
+        
+        eff_ess_x = ess(samples[:, 0], density_statistics['mu'][0], density_statistics['sigma'][0])
+        logging.info(f"ESS x: {eff_ess_x}")
+        average_eff_sample_size_x.append(eff_ess_x)
+
+        eff_ess_y = ess(samples[:, 1], density_statistics['mu'][1], density_statistics['sigma'][1])
+        logging.info(f"ESS y: {eff_ess_y}")
+        average_eff_sample_size_y.append(eff_ess_y)
+
+        # plot_samples_with_density(
+        #     samples,
+        #     target_density=density,
+        #     q_0=0.0,
+        #     q_1=0.0,
+        #     name=cfg.figure_path / Path(f"samples_{i}.png"),
+        #     ar=ar,
+        #     s=4.0,
+        #     c="red",
+        #     alpha=0.8,
+        # )
+
+        # plot_chain(
+        #     samples[:100],
+        #     target_density=density,
+        #     q_0=0.0,
+        #     q_1=0.0,
+        #     name=cfg.figure_path / Path(f"samples_{i}.png"),
+        #     ar=ar,
+        #     c="red",
+        #     linewidth=0.5,
+        # )
+    
+        chains.append(samples)
+
+    average_eff_sample_size_x = np.array(average_eff_sample_size_x)
+    average_eff_sample_size_y = np.array(average_eff_sample_size_y)
+    average_acceptance_rate = np.array(average_acceptance_rate)
+
+    logging.info("------------")
+    logging.info(f"Average ESS x: {np.sum(average_eff_sample_size_x)/cfg.sample.average_results_over_trials} \pm {np.std(average_eff_sample_size_x)}")
+    logging.info(f"Average ESS y: {np.sum(average_eff_sample_size_y)/cfg.sample.average_results_over_trials} \pm {np.std(average_eff_sample_size_y)}")
+    logging.info(f"Average acceptance rate: {np.sum(average_acceptance_rate)/cfg.sample.average_results_over_trials} \pm {np.std(average_acceptance_rate)}")
+
+    chains = np.array(chains)[:, :, :2]
+    logging.info(f"GR R: {gelman_rubin_r(chains)}")
 
 if __name__ == "__main__":
     app.run(main)

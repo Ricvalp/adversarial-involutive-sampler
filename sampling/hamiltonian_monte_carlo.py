@@ -33,9 +33,7 @@ def hmc_kernel(
     log_prob_old = density(x)
     log_prob_ratio = log_prob_old - log_prob_new  # log_prob_new - log_prob_old
 
-    # accept = jnp.log(jax.random.uniform(accept_subkey, (parallel_chains,))) < log_prob_ratio
-
-    accept = jnp.log(jax.random.uniform(accept_subkey, (parallel_chains,))) < log_prob_ratio
+    accept = jax.random.uniform(accept_subkey, (parallel_chains,)) < jnp.exp(log_prob_ratio)
 
     x_new = jnp.where(accept[:, None], x_new, x)[:, : x.shape[1] // 2]
     momentum = jax.random.multivariate_normal(
@@ -56,6 +54,7 @@ jit_hmc_kernel = jax.jit(
         7,
     ),
 )
+
 
 
 def hmc(
@@ -119,19 +118,16 @@ def hmc(
 
     return np.vstack(samples), np.array(ars).mean()
 
-
 # returns also hamiltonian trajectories
-
 
 def hmc_proposal_debug(x, grad_potential_fn, num_steps, step_size):
     # Leapfrog integration
-    tr = []
+    tr = [x]
     for _ in range(num_steps):
         x = leapfrog_step(x, step_size, grad_potential_fn)
         tr.append(x)
 
     return x, jnp.array(tr)
-
 
 def hmc_kernel_debug(
     x, key, cov_p, density, num_steps, step_size, grad_potential_fn, parallel_chains=100
@@ -141,7 +137,7 @@ def hmc_kernel_debug(
 
     log_prob_new = density(x_new)
     log_prob_old = density(x)
-    log_prob_ratio = log_prob_new - log_prob_old
+    log_prob_ratio = log_prob_old - log_prob_new
 
     accept = jnp.log(jax.random.uniform(accept_subkey, (parallel_chains,))) < log_prob_ratio
 
@@ -164,7 +160,6 @@ jit_hmc_kernel_debug = jax.jit(
         7,
     ),
 )
-
 
 def hmc_debug(
     density,

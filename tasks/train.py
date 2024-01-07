@@ -16,7 +16,9 @@ def main(_):
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
     cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, config=cfg)
+    if cfg.wandb.use:
+        # os.environ["WANDB_SILENT"] = "true"
+        wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, config=cfg)
 
     density = getattr(densities, cfg.target_density.name)
 

@@ -8,7 +8,7 @@ def mh_kernel(x, key, kernel, density, parallel_chains=100):
     
         log_prob_new = density(x_new)
         log_prob_old = density(x)
-        log_prob_ratio = log_prob_new - log_prob_old
+        log_prob_ratio = log_prob_old - log_prob_new
 
         accept = jnp.log(jax.random.uniform(accept_subkey, (parallel_chains,))) < log_prob_ratio
 

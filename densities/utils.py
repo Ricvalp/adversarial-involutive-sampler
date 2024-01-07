@@ -1,12 +1,14 @@
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
+import seaborn as sns
+import seaborn_image as snsimg
 
 
 def plot_density(density, xlim, ylim, n=100, name=None):
     x = jnp.linspace(-xlim, xlim, n)
     y = jnp.linspace(-ylim, ylim, n)
     X, Y = jnp.meshgrid(x, y)
-    Z = jnp.exp(density(jnp.hstack([X.reshape(-1, 1), Y.reshape(-1, 1)])))
+    Z = jnp.exp(-density(jnp.hstack([X.reshape(-1, 1), Y.reshape(-1, 1)])))
     Z = Z.reshape(X.shape)
 
     plt.imshow(Z, extent=(-xlim, xlim, -ylim, ylim), origin="lower", cmap="viridis")
@@ -16,7 +18,6 @@ def plot_density(density, xlim, ylim, n=100, name=None):
         plt.savefig(name)
     plt.show()
     plt.close()
-
 
 def plot_hamiltonian_density(
     density, xlim_q, ylim_q, xlim_p, ylim_p, n=100, q_0=0.0, q_1=0.0, name=None
@@ -68,6 +69,41 @@ def plot_hamiltonian_density(
         plt.savefig(name)
     plt.show()
     plt.close()
+
+
+def plot_hamiltonian_density_only_q(
+    density, xlim_q, ylim_q,  n=100, name=None
+):
+    # sns.set_context("paper", font_scale=1.5)
+    # color_palette = sns.color_palette('crest')
+    x = jnp.linspace(-xlim_q, xlim_q, n)
+    y = jnp.linspace(-ylim_q, ylim_q, n)
+    X_q, Y_q = jnp.meshgrid(x, y)
+    z_q = jnp.concatenate(
+        jnp.array(
+            [
+                jnp.hstack([X_q.reshape(-1, 1), Y_q.reshape(-1, 1)]),
+                jnp.hstack([jnp.zeros((n**2, 1)), jnp.zeros((n**2, 1))]),
+            ]
+        ),
+        axis=1,
+    )
+    Z_q = jnp.exp(-density(z_q)).reshape((n, n))
+
+    fig = plt.figure(figsize=(5, 5))
+    im_q = plt.imshow(
+        Z_q, extent=(-xlim_q, xlim_q, -ylim_q, ylim_q), origin="lower", cmap="viridis"
+    )
+    # plt.xlabel(r'$q_1$', fontsize=20)
+    # plt.ylabel(r'$q_2$', fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    if name is not None:
+        plt.savefig(name)
+    plt.show()
+    plt.close()
+
+
 
 
 def plot_logistic_regression_density(density, xlim_q, ylim_q, xlim_p, ylim_p, d, n=100, name=None):

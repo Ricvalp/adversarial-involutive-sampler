@@ -5,6 +5,11 @@ import numpy as np
 from jax import grad
 
 
+statistics_ring5 = {
+    'mu': [0., 0.],
+    'sigma': [2.58, 2.58]
+}
+
 def ring5(x):
     u1 = ((jnp.sqrt(x[:, 0] ** 2 + x[:, 1] ** 2) - 1) ** 2) / 0.04
     u2 = ((jnp.sqrt(x[:, 0] ** 2 + x[:, 1] ** 2) - 2) ** 2) / 0.04
@@ -16,7 +21,6 @@ def ring5(x):
 
 
 def log_normal(x, mu, inv_cov):
-    d = x.shape[0]
     return -0.5 * jnp.dot(jnp.dot((x - mu).T, inv_cov), (x - mu))
 
 
@@ -39,3 +43,16 @@ def nv_ring5(x):
 
 
 grad_ring5 = jax.vmap(grad(nv_ring5))
+
+
+# import matplotlib.pyplot as plt
+
+# x = jnp.linspace(-8, 8, 100)
+# X, Y = jnp.meshgrid(x, x)
+# Z = jnp.hstack([X.reshape(-1, 1), Y.reshape(-1, 1)])
+# grads = grad_ring5(Z)
+# density = jnp.exp(-ring5(Z)).reshape((100, 100))
+# plt.imshow(density)
+# plt.colorbar()
+# # plt.quiver(Z[:, 0], Z[:, 1], grads[:, 0], grads[:, 1])
+# plt.show()

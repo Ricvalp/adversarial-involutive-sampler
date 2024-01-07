@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 
 
-def random_walk_kernel(sigma=0.1):
+def random_walk_kernel(sigma=1.):
         
         def kernel(x, key):
             key, subkey = jax.random.split(key, 2)

@@ -25,7 +25,7 @@ def main(_):
 
     plot_density(density, xlim=6, ylim=6, n=100, name=cfg.figure_path / Path("density.png"))
 
-    kernel_fn = random_walk_kernel(0.1)
+    kernel_fn = random_walk_kernel(1.1)
 
     samples = metropolis_hastings(
         kernel_fn,
@@ -36,7 +36,6 @@ def main(_):
         burn_in=100,
         seed=cfg.seed,
     )
-
     plot_samples(
         samples,
         target_density=density,

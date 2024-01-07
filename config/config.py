@@ -12,11 +12,11 @@ def get_config(mode: Literal["train", "sample"] = None):
         logging.info(f"No mode provided, using '{mode}' as default")
 
     cfg = ConfigDict()
-    cfg.seed = 42
+    cfg.seed = 41
 
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_dir = pathlib.Path("./checkpoints")
-    cfg.checkpoint_name = "checkpoint_4_2_0"
+    cfg.checkpoint_name = "checkpoint_1_2_0"
 
     # Restore checkpoint
     cfg.checkpoint_epoch = 7
@@ -30,7 +30,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Wandb
     cfg.wandb = ConfigDict()
-    cfg.wandb.use = True
+    cfg.wandb.use = False
     cfg.wandb.project = "adversarial-involutive-sampler-ring"
     cfg.wandb.entity = "ricvalp"
 
@@ -39,7 +39,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.kernel.num_flow_layers = 5
     cfg.kernel.num_layers = 2
     cfg.kernel.num_hidden = 32
-    cfg.kernel.d = 4
+    cfg.kernel.d = 2
 
     # Discriminator
     cfg.discriminator = ConfigDict()
@@ -74,16 +74,21 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.dataset.num_covariates = 14
 
     if mode == "sample":
+
         # Sample
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
         cfg.sample.num_parallel_chains = 1
         cfg.sample.num_iterations = 5000  # after burn-in
         cfg.sample.burn_in = 1000
+
+        cfg.sample.average_results_over_trials = 32
+
         # HMC
         cfg.hmc = ConfigDict()
         cfg.hmc.potential_function_name = "ring"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.01001
+        cfg.hmc.step_size = 0.1
+
 
     return cfg
