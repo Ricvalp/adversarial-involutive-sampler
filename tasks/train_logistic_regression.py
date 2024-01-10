@@ -37,7 +37,7 @@ def main(_):
 
     heart_data = fetch_openml(name="heart", version=1)
     X_data = heart_data.data.toarray()
-    # X_data = normalize_covariates(X_data)
+    X_data = normalize_covariates(X_data)
     X = X_data[:, : cfg.dataset.num_covariates]
     X = jnp.concatenate([X, jnp.ones((X.shape[0], 1))], axis=1)
     t_data = heart_data.target

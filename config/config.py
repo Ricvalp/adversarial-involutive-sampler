@@ -12,7 +12,7 @@ def get_config(mode: Literal["train", "sample"] = None):
         logging.info(f"No mode provided, using '{mode}' as default")
 
     cfg = ConfigDict()
-    cfg.seed = 41
+    cfg.seed = 42
 
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_dir = pathlib.Path("./checkpoints")
@@ -25,8 +25,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     # Target density
     cfg.target_density = ConfigDict()
     cfg.target_density.name = "hamiltonian_ring"
-    cfg.target_density.mu = [0.0, 0.0]
-    cfg.target_density.std = [3.0, 3.0]
+
 
     # Wandb
     cfg.wandb = ConfigDict()
@@ -71,7 +70,8 @@ def get_config(mode: Literal["train", "sample"] = None):
     # Dataset
     cfg.dataset = ConfigDict()
     # cfg.dataset.test_split = 150
-    cfg.dataset.num_covariates = 14
+    cfg.dataset.num_covariates = 24
+    cfg.dataset.name = "heart"
 
     if mode == "sample":
 
@@ -88,7 +88,6 @@ def get_config(mode: Literal["train", "sample"] = None):
         cfg.hmc = ConfigDict()
         cfg.hmc.potential_function_name = "ring"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.1
-
+        cfg.hmc.step_size = 0.01
 
     return cfg

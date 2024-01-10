@@ -67,11 +67,12 @@ def hmc(
     step_size,
     parallel_chains=100,
     burn_in=100,
+    initial_std=1.,
     rng=jax.random.PRNGKey(42),
 ):
     first_init_subkey, second_init_subkey, sampling_subkey = jax.random.split(rng, 3)
 
-    x = jax.random.normal(first_init_subkey, (parallel_chains, d))
+    x = jax.random.normal(first_init_subkey, (parallel_chains, d))*initial_std
     x = jnp.concatenate(
         [
             x,

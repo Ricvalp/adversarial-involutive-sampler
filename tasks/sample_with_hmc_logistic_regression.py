@@ -21,6 +21,9 @@ from logistic_regression import (
     plot_histograms_logistic_regression,
     plot_logistic_regression_samples,
 )
+
+import logistic_regression.statistics as statistics
+from sampling.metrics import ess, gelman_rubin_r
 from sampling import hmc
 
 _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
@@ -29,14 +32,26 @@ _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
 def main(_):
     cfg = load_cfgs(_TASK_FILE)
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
+    density_statistics = getattr(statistics, "statistics_"+cfg.dataset.name)
 
-    heart_data = fetch_openml(name="heart", version=1)
-    X_data = heart_data.data.toarray()
+    data = np.load(f'data/{cfg.dataset.name}/data.npy')
+    labels = np.load(f'data/{cfg.dataset.name}/labels.npy')
+
+    # heart_data = fetch_openml(name="heart", version=1)
+    # X_data = heart_data.data.toarray()
     # X_data = normalize_covariates(X_data)
+
+    X_data = normalize_covariates(data)
+
+
     X = X_data[:, : cfg.dataset.num_covariates]
     X = jnp.concatenate([X, jnp.ones((X.shape[0], 1))], axis=1)
-    t_data = heart_data.target
-    t = t_data  # [:cfg.dataset.test_split]
+
+    # t_data = heart_data.target
+    # t = t_data  # [:cfg.dataset.test_split]
+
+    t = labels[:, 0]
+
     t = (t == 1).astype(int).astype(float)
 
     # w=jnp.array([-2.5, 1.5, .5])
@@ -62,12 +77,17 @@ def main(_):
         step_size=cfg.hmc.step_size,
         n=cfg.sample.num_iterations,
         burn_in=cfg.sample.burn_in,
+        initial_std=0.1,
         rng=jax.random.PRNGKey(cfg.seed),
     )
 
     logging.info(f"Acceptance rate: {ar}")
     for i in range(X.shape[1]):
-        logging.info(f"ESS for w_{i}: {pm.ess(np.array(samples[:, i]))}")
+
+        # logging.info(f"ESS for w_{i}: {pm.ess(np.array(samples[:, i]))}")
+        eff_ess = ess(samples[:, i], density_statistics['mu'][i], density_statistics['sigma'][i])
+        logging.info(f"ESS w_{i}: {eff_ess}")
+        # average_eff_sample_size_x.append(eff_ess_x)
 
     for i in range(X.shape[1] - 1):
         plot_logistic_regression_samples(
