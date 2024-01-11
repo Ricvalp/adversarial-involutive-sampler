@@ -17,6 +17,12 @@ from discriminator_models import create_simple_discriminator, log_plot
 from sampling import metropolis_hastings_with_momentum, plot_samples_with_density
 from trainers.utils import SamplesDataset, numpy_collate
 
+from logistic_regression import (
+    plot_logistic_regression_samples,
+    plot_histograms_logistic_regression,
+    plot_histograms2d_logistic_regression,
+    get_predictions,
+    )
 
 class Trainer:
     def __init__(
@@ -69,7 +75,6 @@ class Trainer:
         discriminator_optimizer = optax.adam(
             learning_rate=self.cfg.train.discriminator_learning_rate
         )
-
         self.L_state = TrainState.create(
             apply_fn=discriminator.L.apply, params=theta_params, tx=L_optimizer
         )
@@ -129,7 +134,7 @@ class Trainer:
             if self.wandb_log:
                 wandb.log(
                     {
-                        "Epoch: ": epoch_idx,
+                        "Epoch": epoch_idx,
                         "AR loss": ar_loss,
                         "adversarial loss": adv_loss,
                     }
@@ -219,6 +224,7 @@ class Trainer:
         self.L_state = ckpt["L"]
         self.D_state = ckpt["D"]
 
+
 class TrainerLogisticRegression:
     def __init__(
         self,
@@ -227,6 +233,8 @@ class TrainerLogisticRegression:
         wandb_log,
         checkpoint_dir,
         checkpoint_name,
+        X,
+        t,
         seed,
     ):
         self.rng = jax.random.PRNGKey(seed)
@@ -234,10 +242,12 @@ class TrainerLogisticRegression:
         self.density = density
         self.wandb_log = wandb_log
         self.checkpoint_path = os.path.join(
-            os.path.join(checkpoint_dir, cfg.target_density.name), checkpoint_name
+            os.path.join(checkpoint_dir, cfg.dataset.name), checkpoint_name
         )
 
         self.cfg = cfg
+        self.X = X
+        self.t = t
 
         self.init_model()
         self.create_train_steps()
@@ -270,13 +280,13 @@ class TrainerLogisticRegression:
         discriminator_optimizer = optax.adam(
             learning_rate=self.cfg.train.discriminator_learning_rate
         )
-
         self.L_state = TrainState.create(
             apply_fn=discriminator.L.apply, params=theta_params, tx=L_optimizer
         )
         self.D_state = TrainState.create(
             apply_fn=discriminator.apply, params=phi_params, tx=discriminator_optimizer
         )
+
 
     def create_train_steps(self):
         def maximize_AR_step(L_state, D_state, batch):
@@ -313,6 +323,8 @@ class TrainerLogisticRegression:
             dataset, batch_size=self.cfg.train.batch_size, shuffle=True, collate_fn=numpy_collate
         )
 
+        print(f'ACCEPTANCE RATE: {_}')
+
         return key
 
     def train_epoch(self, epoch_idx):
@@ -330,36 +342,42 @@ class TrainerLogisticRegression:
             if self.wandb_log:
                 wandb.log(
                     {
-                        "Epoch: ": epoch_idx,
+                        "Epoch": epoch_idx,
                         "AR loss": ar_loss,
                         "adversarial loss": adv_loss,
                     }
                 )
+            
+                
+                # plot_histograms_logistic_regression(
+                #     samples,
+                #     i=i,
+                #     name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
+                # )
+                # plot_histograms2d_logistic_regression(
+                #     samples,
+                #     i=i,
+                #     j=i + 1,
+                #     name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
+                # )
 
-            if i % self.cfg.log.log_every == 0:
-                _, ar = self.sample(
-                    rng=self.rng,
-                    n=self.cfg.log.num_steps,
-                    burn_in=self.cfg.log.burn_in,
-                    parallel_chains=self.cfg.log.num_parallel_chains,
-                    name=None,  # f"samples_{epoch_idx}.png",
-                )
-                self.save_model(epoch=epoch_idx, step=i)
 
-                if self.wandb_log:
-                    wandb.log({"acceptance rate": ar})
 
-                    fig = log_plot(
-                        discriminator_parameters={"params": {"D": self.D_state.params}},
-                        num_layers_psi=self.cfg.discriminator.num_layers_psi,
-                        num_hidden_psi=self.cfg.discriminator.num_hidden_psi,
-                        num_layers_eta=self.cfg.discriminator.num_layers_eta,
-                        num_hidden_eta=self.cfg.discriminator.num_hidden_eta,
-                        activation=self.cfg.discriminator.activation,
-                        d=self.cfg.kernel.d,
-                        name="discriminator",
-                    )
-                    wandb.log({"discriminator": fig})
+            # if i % self.cfg.log.log_every == 0 and i != 0:
+            #     _, ar = self.sample(
+            #         rng=self.rng,
+            #         n=self.cfg.log.num_steps,
+            #         burn_in=self.cfg.log.burn_in,
+            #         parallel_chains=self.cfg.log.num_parallel_chains,
+            #         name=None,  # f"samples_{epoch_idx}.png",
+            #     )
+            #     self.save_model(epoch=epoch_idx, step=i)
+
+            #     if self.wandb_log:
+            #         wandb.log({"acceptance rate": ar})
+
+                    # PLOT LOG
+                    # plot discriminator
 
     def train_model(self):
         for epoch in range(self.cfg.train.num_epochs):
@@ -374,30 +392,63 @@ class TrainerLogisticRegression:
             density=self.density,
             d=self.cfg.kernel.d,
             n=n,
-            cov_p=jnp.eye(self.cfg.kernel.d),
+            cov_p=jnp.eye(self.cfg.kernel.d) * 0.01,
             parallel_chains=parallel_chains,
             burn_in=burn_in,
             rng=rng,
+            initial_std=0.1
         )
         logging.info(f"Sampling took {time.time() - start_time} seconds")
 
         if name is not None:
             name = self.cfg.figure_path / Path(name)
 
-        fig = plot_samples_with_density(
-            samples,
-            target_density=self.density,
-            q_0=0.0,
-            q_1=0.0,
-            name=name,
-            s=0.5,
-            c="red",
-            alpha=0.05,
-            ar=ar,
-        )
 
+        index = 0
+        fig = plot_logistic_regression_samples(
+                samples[:self.cfg.log.samples_to_plot],
+                num_chains=parallel_chains,
+                index=index,
+                name=self.cfg.figure_path / Path(f"samples_logistic_regression_{index}.png"),
+                )
+        fig1 = plot_histograms_logistic_regression(
+                    samples[:self.cfg.log.samples_to_plot],
+                    index=index,
+                    name=self.cfg.figure_path / Path(f"histograms_logistic_regression_{index}.png"),
+                )
+        fig2 = plot_histograms2d_logistic_regression(
+                    samples[:self.cfg.log.samples_to_plot],
+                    index=index,
+                    name=self.cfg.figure_path / Path(f"histograms2d_logistic_regression_{index}.png"),
+                )
+
+        predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
+        logging.info(f"Accuracy: {np.mean(predictions == self.t.astype(int))}")
+        
         if self.wandb_log:
+
+            index = 0
+            fig = plot_logistic_regression_samples(
+                    samples,
+                    num_chains=parallel_chains,
+                    index=index,
+                    name=self.cfg.figure_path / Path(f"samples_logistic_regression_{index}.png"),
+                    )
+            fig1 = plot_histograms_logistic_regression(
+                        samples,
+                        index=index,
+                        name=self.cfg.figure_path / Path(f"histograms_logistic_regression_{index}.png"),
+                    )
+            fig2 = plot_histograms2d_logistic_regression(
+                        samples,
+                        index=index,
+                        name=self.cfg.figure_path / Path(f"histograms2d_logistic_regression_{index}.png"),
+                    )
             wandb.log({f"samples with {parallel_chains} chains": fig})
+            wandb.log({f"histograms with {parallel_chains} chains": fig1})
+            wandb.log({f"histograms2d with {parallel_chains} chains": fig2})
+            predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
+            wandb.log({"Accuracy:": np.mean(predictions == self.t.astype(int))})
 
         return samples, ar
 
@@ -406,7 +457,10 @@ class TrainerLogisticRegression:
         orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
         save_args = orbax_utils.save_args_from_target(ckpt)
         orbax_checkpointer.save(
-            os.path.join(self.checkpoint_path, f"{epoch}_{step}"), ckpt, save_args=save_args
+            os.path.join(self.checkpoint_path,f"{epoch}_{step}"),
+            ckpt,
+            save_args=save_args,
+            force=self.cfg.overwrite
         )
 
         # log cfg into checkpoint_path

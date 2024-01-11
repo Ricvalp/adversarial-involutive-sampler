@@ -16,7 +16,8 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_dir = pathlib.Path("./checkpoints")
-    cfg.checkpoint_name = "checkpoint_1_2_0"
+    cfg.checkpoint_name = "debug"
+    cfg.overwrite = True
 
     # Restore checkpoint
     cfg.checkpoint_epoch = 7
@@ -38,7 +39,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.kernel.num_flow_layers = 5
     cfg.kernel.num_layers = 2
     cfg.kernel.num_hidden = 32
-    cfg.kernel.d = 2
+    cfg.kernel.d = 5
 
     # Discriminator
     cfg.discriminator = ConfigDict()
@@ -52,25 +53,26 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.train = ConfigDict()
     cfg.train.kernel_learning_rate = 1e-3
     cfg.train.discriminator_learning_rate = 1e-3
-    cfg.train.num_resampling_steps = 1000
+    cfg.train.num_resampling_steps = 100
     cfg.train.num_resampling_parallel_chains = 1000
     cfg.train.resampling_burn_in = 100
     cfg.train.batch_size = 4096
     cfg.train.num_epochs = 100
-    cfg.train.num_AR_steps = 1
+    cfg.train.num_AR_steps = 2
     cfg.train.num_adversarial_steps = 1
 
     # Log
     cfg.log = ConfigDict()
-    cfg.log.log_every = 100
+    cfg.log.log_every = 500
     cfg.log.num_steps = 10000
     cfg.log.num_parallel_chains = 2
     cfg.log.burn_in = 100
+    cfg.log.samples_to_plot = 5000
 
     # Dataset
     cfg.dataset = ConfigDict()
     # cfg.dataset.test_split = 150
-    cfg.dataset.num_covariates = 24
+    cfg.dataset.num_covariates = 4
     cfg.dataset.name = "heart"
 
     if mode == "sample":
@@ -88,6 +90,6 @@ def get_config(mode: Literal["train", "sample"] = None):
         cfg.hmc = ConfigDict()
         cfg.hmc.potential_function_name = "ring"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.01
+        cfg.hmc.step_size = 0.005
 
     return cfg

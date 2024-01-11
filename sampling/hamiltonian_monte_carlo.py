@@ -31,7 +31,7 @@ def hmc_kernel(
 
     log_prob_new = density(x_new)
     log_prob_old = density(x)
-    log_prob_ratio = log_prob_old - log_prob_new  # log_prob_new - log_prob_old
+    log_prob_ratio = log_prob_new - log_prob_old  # log_prob_new - log_prob_old
 
     accept = jax.random.uniform(accept_subkey, (parallel_chains,)) < jnp.exp(log_prob_ratio)
 

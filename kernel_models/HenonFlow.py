@@ -5,6 +5,8 @@ import jax.numpy as jnp
 from flax import linen as nn
 
 
+default_init = nn.initializers.normal(stddev=1e-2)
+
 class FlowModel(nn.Module):
     d: int
     flows: Sequence[nn.Module]
@@ -26,32 +28,6 @@ class FlowModel(nn.Module):
         z = z * self.R
 
         return z
-
-
-# class HenonLayer(nn.Module):
-#     V: nn.Module
-
-#     def setup(self):
-#         self.eta = self.param("eta", nn.initializers.zeros, (1, 2))
-
-#     def __call__(self, z, reverse=False):
-#         if not reverse:
-#             X = jnp.matmul(z, jnp.array([[0.0, 1.0], [0.0, 0.0]]))
-#             Y = jnp.matmul(z, jnp.array([[0.0, 0.0], [1.0, 0.0]]))
-#             ETA = jnp.matmul(self.eta, jnp.array([[1.0, 0.0], [0.0, 0.0]]))
-#             V = jnp.matmul(self.V(Y), jnp.array([[0.0, 0.0], [0.0, 1.0]]))
-
-#             return -X + Y + ETA + V
-
-#         else:
-#             X = jnp.matmul(z, jnp.array([[0.0, 1.0], [0.0, 0.0]]))
-#             Y = jnp.matmul(z, jnp.array([[0.0, 0.0], [1.0, 0.0]]))
-#             ETA = jnp.matmul(self.eta, jnp.array([[0.0, 0.0], [0.0, 1.0]]))
-
-#             Xbar = jnp.matmul(X - ETA, jnp.array([[0.0, 0.0], [1.0, 0.0]]))
-#             V = jnp.matmul(self.V(Xbar), jnp.array([[0.0, 0.0], [1.0, 0.0]]))
-
-#             return X - Y - ETA + V
 
 
 class HenonLayer(nn.Module):
@@ -97,8 +73,8 @@ class SimpleMLP(nn.Module):
     num_outputs: int
 
     def setup(self):
-        self.linears = [nn.Dense(features=self.num_hidden) for i in range(self.num_layers - 1)] + [
-            nn.Dense(features=self.num_outputs)
+        self.linears = [nn.Dense(features=self.num_hidden, kernel_init=default_init) for i in range(self.num_layers - 1)] + [
+            nn.Dense(features=self.num_outputs, kernel_init=default_init)
         ]
 
     def __call__(self, x):

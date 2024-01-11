@@ -36,20 +36,9 @@ def main(_):
 
     data = np.load(f'data/{cfg.dataset.name}/data.npy')
     labels = np.load(f'data/{cfg.dataset.name}/labels.npy')
-
-    # heart_data = fetch_openml(name="heart", version=1)
-    # X_data = heart_data.data.toarray()
-    # X_data = normalize_covariates(X_data)
-
     X_data = normalize_covariates(data)
-
-
     X = X_data[:, : cfg.dataset.num_covariates]
     X = jnp.concatenate([X, jnp.ones((X.shape[0], 1))], axis=1)
-
-    # t_data = heart_data.target
-    # t = t_data  # [:cfg.dataset.test_split]
-
     t = labels[:, 0]
 
     t = (t == 1).astype(int).astype(float)
@@ -77,7 +66,7 @@ def main(_):
         step_size=cfg.hmc.step_size,
         n=cfg.sample.num_iterations,
         burn_in=cfg.sample.burn_in,
-        initial_std=0.1,
+        initial_std=.1,
         rng=jax.random.PRNGKey(cfg.seed),
     )
 
@@ -92,9 +81,9 @@ def main(_):
     for i in range(X.shape[1] - 1):
         plot_logistic_regression_samples(
             samples,
-            i=i,
-            j=i + 1,
-            num_chains=None,  # cfg.sample.num_parallel_chains,
+            # i=i,
+            # j=i + 1,
+            num_chains=None, # cfg.sample.num_parallel_chains,
             name=cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
         )
         plot_histograms_logistic_regression(

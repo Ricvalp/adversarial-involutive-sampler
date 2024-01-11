@@ -28,7 +28,7 @@ def hamiltonian(x, t, X, inv_sigma):
     d = x.shape[-1] // 2
     b = x[:, :d]
     p = x[:, d:]
-    return U(b, t, X, inv_sigma, 1e-10) + vmap_normal(p, jnp.eye(d))
+    return U(b, t, X, inv_sigma, 1e-10) + vmap_normal(p, jnp.eye(d) * 10)
 
 
 def u(b, t, X, inv_sigma):
