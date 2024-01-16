@@ -11,7 +11,7 @@ def mh_kernel_with_momentum(x, key, cov_p, kernel, density, parallel_chains=100)
 
     log_prob_new = density(x_new)
     log_prob_old = density(x)
-    log_prob_ratio = log_prob_old - log_prob_new # log_prob_old - log_prob_new
+    log_prob_ratio = log_prob_new - log_prob_old # log_prob_old - log_prob_new
 
     accept = jnp.log(jax.random.uniform(accept_subkey, (parallel_chains,))) < log_prob_ratio
 
@@ -47,7 +47,7 @@ def metropolis_hastings_with_momentum(
 ):
     first_init_subkey, second_init_subkey, sampling_subkey = jax.random.split(rng, 3)
 
-    if starting_points is not None:
+    if starting_points is None:
         x = jax.random.normal(first_init_subkey, (parallel_chains, d))*initial_std
         x = jnp.concatenate(
             [
@@ -83,3 +83,9 @@ def metropolis_hastings_with_momentum(
     logging.info(f"Sampling done. Time taken: {time.time() - time_start}")
 
     return jnp.vstack(samples), jnp.array(ars).mean()
+
+
+
+@jax.jit
+def jitted_stack(x):
+    return jnp.stack(x)

@@ -97,16 +97,13 @@ def plot_logistic_regression_samples(
 
     axs[0, 0].set_xlabel(f"$w_{index + 0}$")
     axs[0, 0].set_ylabel(f"$w_{index + 1}$")
-    axs[0, 0].legend(fontsize=20)
     axs[0, 1].set_xlabel(f"$w_{index + 1}$")
     axs[0, 1].set_ylabel(f"$w_{index + 2}$")
-    axs[0, 1].legend(fontsize=20)
     axs[1, 0].set_xlabel(f"$w_{index + 2}$")
     axs[1, 0].set_ylabel(f"$w_{index + 3}$")
-    axs[1, 0].legend(fontsize=20)
     axs[1, 1].set_xlabel(f"$w_{index + 3}$")
     axs[1, 1].set_ylabel(f"$w_{index + 4}$")
-    axs[1, 1].legend(fontsize=20)
+    
     if name is not None:
         plt.savefig(name)
     plt.close()
@@ -124,6 +121,16 @@ def plot_histograms2d_logistic_regression(samples, index=0 ,name=None, **kwargs)
     axs[1, 0].hist2d(samples[:, 2+index], samples[:, 3+index], bins=100, **kwargs)
     axs[1, 1].hist2d(samples[:, 3+index], samples[:, 4+index], bins=100, **kwargs)
 
+    # # set axis limits
+    # axs[0, 0].set_xlim([-3, 3])
+    # axs[0, 0].set_ylim([-3, 3])
+    # axs[0, 1].set_xlim([-3, 3])
+    # axs[0, 1].set_ylim([-3, 3])
+    # axs[1, 0].set_xlim([-3, 3])
+    # axs[1, 0].set_ylim([-3, 3])
+    # axs[1, 1].set_xlim([-3, 3])
+    # axs[1, 1].set_ylim([-3, 3])
+
     axs[0, 0].set_xlabel(f"$w_{index + 0}$")
     axs[0, 0].set_ylabel(f"$w_{index + 1}$")
     axs[0, 1].set_xlabel(f"$w_{index + 1}$")
@@ -132,6 +139,7 @@ def plot_histograms2d_logistic_regression(samples, index=0 ,name=None, **kwargs)
     axs[1, 0].set_ylabel(f"$w_{index + 3}$")
     axs[1, 1].set_xlabel(f"$w_{index + 3}$")
     axs[1, 1].set_ylabel(f"$w_{index + 4}$")
+
     if name is not None:
         plt.savefig(name)
     plt.close()
@@ -158,3 +166,44 @@ def plot_histograms_logistic_regression(samples, index=0, name=None, **kwargs):
 
     return fig
 
+
+def plot_first_kernel_iteration(kernel, starting_points, index=0, name=None):
+
+    fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+
+    samples = kernel(starting_points)
+
+    axs[0, 0].scatter(starting_points[:, 0+index], starting_points[:, 1+index], s=1, c="b")
+    axs[0, 1].scatter(starting_points[:, 1+index], starting_points[:, 2+index], s=1, c="b")
+    axs[1, 0].scatter(starting_points[:, 2+index], starting_points[:, 3+index], s=1, c="b")
+    axs[1, 1].scatter(starting_points[:, 3+index], starting_points[:, 4+index], s=1, c="b")
+
+    axs[0, 0].scatter(samples[:, 0+index], samples[:, 1+index], s=1, c="r", alpha=0.4)
+    axs[0, 1].scatter(samples[:, 1+index], samples[:, 2+index], s=1, c="r", alpha=0.4)
+    axs[1, 0].scatter(samples[:, 2+index], samples[:, 3+index], s=1, c="r", alpha=0.4)
+    axs[1, 1].scatter(samples[:, 3+index], samples[:, 4+index], s=1, c="r", alpha=0.4)
+
+    # set axis limits
+    axs[0, 0].set_xlim([-3, 3])
+    axs[0, 0].set_ylim([-3, 3])
+    axs[0, 1].set_xlim([-3, 3])
+    axs[0, 1].set_ylim([-3, 3])
+    axs[1, 0].set_xlim([-3, 3])
+    axs[1, 0].set_ylim([-3, 3])
+    axs[1, 1].set_xlim([-3, 3])
+    axs[1, 1].set_ylim([-3, 3])
+
+    axs[0, 0].set_xlabel(f"$w_{index + 0}$")
+    axs[0, 0].set_ylabel(f"$w_{index + 1}$")
+    axs[0, 1].set_xlabel(f"$w_{index + 1}$")
+    axs[0, 1].set_ylabel(f"$w_{index + 2}$")
+    axs[1, 0].set_xlabel(f"$w_{index + 2}$")
+    axs[1, 0].set_ylabel(f"$w_{index + 3}$")
+    axs[1, 1].set_xlabel(f"$w_{index + 3}$")
+    axs[1, 1].set_ylabel(f"$w_{index + 4}$")
+
+    if name is not None:
+        plt.savefig(name)
+    plt.close()
+
+    return fig

@@ -35,26 +35,6 @@ def main(_):
 
     # data = np.load(f'data/{cfg.dataset.name}/data.npy')
     # labels = np.load(f'data/{cfg.dataset.name}/labels.npy')
-    # X_data = normalize_covariates(data)
-    # X = X_data[:, : cfg.dataset.num_covariates]
-    # X = jnp.concatenate([X, jnp.ones((X.shape[0], 1))], axis=1)
-    # t = labels[:, 0]
-    # t = (t == 1).astype(int).astype(float)
-
-    # density = lambda x: hamiltonian(x, t, X, inv_sigma=jnp.eye(X.shape[1]) * 0.01)
-
-
-
-
-
-
-
-    # use two densities because of the fixed batch size !!!
-
-
-
-
-
 
     if cfg.train.bootstrap_with_hmc:
         hmc_samples = np.load(cfg.hmc_sample_dir / Path(f"hmc_samples_{cfg.dataset.name}.npy"))

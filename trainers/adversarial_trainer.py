@@ -21,6 +21,7 @@ from logistic_regression import (
     plot_logistic_regression_samples,
     plot_histograms_logistic_regression,
     plot_histograms2d_logistic_regression,
+    plot_first_kernel_iteration,
     get_predictions,
     )
 
@@ -333,7 +334,7 @@ class TrainerLogisticRegression:
             return key
 
     def train_epoch(self, epoch_idx):
-        if self.hmc_samples is not None and epoch_idx == 0:
+        if self.hmc_samples is not None:
             self.rng = self.create_data_loader(self.rng, epoch_idx, hmc_samples=True)
         else:
             self.rng = self.create_data_loader(self.rng, epoch_idx, hmc_samples=False)
@@ -361,9 +362,22 @@ class TrainerLogisticRegression:
 
     def train_model(self):
         if self.hmc_samples is not None:
+            epoch = 0
+            rng = self.rng
             for epoch in range(self.cfg.train.num_epochs_hmc_bootstrap):
-                self.train_epoch(epoch_idx=0)
-        for epoch in range(self.cfg.train.num_epochs):
+                rng, subkey = jax.random.split(rng)
+                self.train_epoch(epoch_idx=epoch)
+                self.save_model(epoch=epoch, step=0)
+                self.sample(                
+                    rng=subkey,
+                    n=self.cfg.train.num_resampling_steps,
+                    burn_in=self.cfg.train.resampling_burn_in,
+                    parallel_chains=self.cfg.train.num_resampling_parallel_chains,
+                    name=None
+                    )
+
+
+        for epoch in range(epoch, self.cfg.train.num_epochs):
             self.train_epoch(epoch_idx=epoch)
 
     def sample(self, rng, n, burn_in, parallel_chains, name):
@@ -388,51 +402,83 @@ class TrainerLogisticRegression:
             name = self.cfg.figure_path / Path(name)
 
 
-        index = 0
-        fig = plot_logistic_regression_samples(
-                samples[:self.cfg.log.samples_to_plot],
-                num_chains=parallel_chains,
-                index=index,
-                name=self.cfg.figure_path / Path(f"samples_logistic_regression_{index}.png"),
-                )
-        fig1 = plot_histograms_logistic_regression(
-                    samples[:self.cfg.log.samples_to_plot],
-                    index=index,
-                    name=self.cfg.figure_path / Path(f"histograms_logistic_regression_{index}.png"),
-                )
-        fig2 = plot_histograms2d_logistic_regression(
-                    samples[:self.cfg.log.samples_to_plot],
-                    index=index,
-                    name=self.cfg.figure_path / Path(f"histograms2d_logistic_regression_{index}.png"),
-                )
-
+        # index = 0
+        # fig = plot_logistic_regression_samples(
+        #         samples[:self.cfg.log.samples_to_plot],
+        #         num_chains=parallel_chains,
+        #         index=index,
+        #         name=self.cfg.figure_path / Path(f"samples_logistic_regression_{index}.png"),
+        #         )
+        # fig1 = plot_histograms_logistic_regression(
+        #             samples[:self.cfg.log.samples_to_plot],
+        #             index=index,
+        #             name=self.cfg.figure_path / Path(f"histograms_logistic_regression_{index}.png"),
+        #         )
+        # fig2 = plot_histograms2d_logistic_regression(
+        #             samples[:self.cfg.log.samples_to_plot],
+        #             index=index,
+        #             name=self.cfg.figure_path / Path(f"histograms2d_logistic_regression_{index}.png"),
+        #         )
         # predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
         # logging.info(f"Accuracy: {np.mean(predictions == self.t.astype(int))}")
         
         if self.wandb_log:
 
             index = 0
-            fig = plot_logistic_regression_samples(
-                    samples,
+
+            fig = self.cfg.figure_path / str(np.random.randint(999999))
+            plot_logistic_regression_samples(
+                    samples[:self.cfg.log.samples_to_plot],
                     num_chains=parallel_chains,
                     index=index,
-                    name=self.cfg.figure_path / Path(f"samples_logistic_regression_{index}.png"),
+                    name=fig # Path(f"samples_logistic_regression_{index}.png"),
                     )
-            fig1 = plot_histograms_logistic_regression(
-                        samples,
+            wandb.log({f"samples with {parallel_chains} chains": wandb.Image(str(fig)+".png")})
+            os.remove(str(fig)+".png")
+
+            fig1 = self.cfg.figure_path / str(np.random.randint(999999))
+            plot_histograms_logistic_regression(
+                        samples[:self.cfg.log.samples_to_plot],
                         index=index,
-                        name=self.cfg.figure_path / Path(f"histograms_logistic_regression_{index}.png"),
+                        name=fig1 # Path(f"histograms_logistic_regression_{index}.png"),
                     )
-            fig2 = plot_histograms2d_logistic_regression(
-                        samples,
+            wandb.log({f"histograms with {parallel_chains} chains": wandb.Image(str(fig1)+".png")})
+            os.remove(str(fig1)+".png")
+            
+
+            fig2 = self.cfg.figure_path / str(np.random.randint(999999))
+            plot_histograms2d_logistic_regression(
+                        samples[:self.cfg.log.samples_to_plot],
                         index=index,
-                        name=self.cfg.figure_path / Path(f"histograms2d_logistic_regression_{index}.png"),
+                        name=fig2 # Path(f"histograms2d_logistic_regression_{index}.png"),
                     )
-            wandb.log({f"samples with {parallel_chains} chains": fig})
-            wandb.log({f"histograms with {parallel_chains} chains": fig1})
-            wandb.log({f"histograms2d with {parallel_chains} chains": fig2})
-            predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
-            wandb.log({"Accuracy:": np.mean(predictions == self.t.astype(int))})
+            wandb.log({f"histograms2d with {parallel_chains} chains": wandb.Image(str(fig2)+".png")})
+            os.remove(str(fig2)+".png")            
+
+            fig3 = self.cfg.figure_path / str(np.random.randint(999999))
+            plot_first_kernel_iteration(
+                kernel=kernel_fn,
+                starting_points=self.hmc_samples,
+                index=index,
+                name=fig3 # Path(f"first_kernel_iteration_{index}.png"),
+            )
+            wandb.log({f"first_kernel_iteration with {parallel_chains} chains": wandb.Image(str(fig3)+".png")})
+            os.remove(str(fig3)+".png")
+
+            fig3p = self.cfg.figure_path / str(np.random.randint(999999))
+            plot_first_kernel_iteration(
+                kernel=kernel_fn,
+                starting_points=self.hmc_samples,
+                index=18,
+                name=fig3p # Path(f"first_kernel_iteration_{index}.png"),
+            )
+            wandb.log({f"first_kernel_iteration (momenta) with {parallel_chains} chains": wandb.Image(str(fig3p)+".png")})
+            os.remove(str(fig3p)+".png")
+
+            wandb.log({"acceptance rate": ar})
+
+            # predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
+            # wandb.log({"Accuracy:": np.mean(predictions == self.t.astype(int))})
 
         return samples, ar
 

@@ -32,8 +32,8 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Wandb
     cfg.wandb = ConfigDict()
-    cfg.wandb.use = False
-    cfg.wandb.project = "adversarial-involutive-sampler-ring"
+    cfg.wandb.use = True
+    cfg.wandb.project = "adversarial-involutive-sampler-debug"
     cfg.wandb.entity = "ricvalp"
 
     # Kernel
@@ -55,14 +55,14 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.train = ConfigDict()
     cfg.train.kernel_learning_rate = 1e-3
     cfg.train.discriminator_learning_rate = 1e-3
-    cfg.train.num_resampling_steps = 100
-    cfg.train.num_resampling_parallel_chains = 1000
-    cfg.train.resampling_burn_in = 100
+    cfg.train.num_resampling_steps = 10
+    cfg.train.num_resampling_parallel_chains = 500
+    cfg.train.resampling_burn_in = 0
     cfg.train.batch_size = 4096
-    cfg.train.num_epochs = 1000
-    cfg.train.num_epochs_hmc_bootstrap = 20
+    cfg.train.num_epochs = 100
+    cfg.train.num_epochs_hmc_bootstrap = 200
     cfg.train.num_AR_steps = 1
-    cfg.train.num_adversarial_steps = 1
+    cfg.train.num_adversarial_steps = 2
     cfg.train.bootstrap_with_hmc = True
     
 
