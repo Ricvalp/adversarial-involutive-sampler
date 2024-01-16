@@ -23,6 +23,7 @@ def ess(samples, mu, sigma):
 
     return N / (1 + 2 * summ)
 
+
 def gelman_rubin_r(chains):
 
     m = chains.shape[0]

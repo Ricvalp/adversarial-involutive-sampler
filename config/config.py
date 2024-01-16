@@ -46,18 +46,18 @@ def get_config(mode: Literal["train", "sample"] = None):
     # Discriminator
     cfg.discriminator = ConfigDict()
     cfg.discriminator.num_layers_psi = 3
-    cfg.discriminator.num_hidden_psi = 32
+    cfg.discriminator.num_hidden_psi = 128
     cfg.discriminator.num_layers_eta = 3
-    cfg.discriminator.num_hidden_eta = 32
+    cfg.discriminator.num_hidden_eta = 128
     cfg.discriminator.activation = "relu"
 
     # Train
     cfg.train = ConfigDict()
-    cfg.train.kernel_learning_rate = 1e-3
-    cfg.train.discriminator_learning_rate = 1e-3
-    cfg.train.num_resampling_steps = 10
-    cfg.train.num_resampling_parallel_chains = 500
-    cfg.train.resampling_burn_in = 0
+    cfg.train.kernel_learning_rate = 1e-4
+    cfg.train.discriminator_learning_rate = 1e-4
+    cfg.train.num_resampling_steps = 5000
+    cfg.train.num_resampling_parallel_chains = 1
+    cfg.train.resampling_burn_in = 1000
     cfg.train.batch_size = 4096
     cfg.train.num_epochs = 100
     cfg.train.num_epochs_hmc_bootstrap = 200
@@ -83,9 +83,9 @@ def get_config(mode: Literal["train", "sample"] = None):
         # Sample
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
-        cfg.sample.num_parallel_chains = 100
-        cfg.sample.num_iterations = 5000  # after burn-in
-        cfg.sample.burn_in = 1000
+        cfg.sample.num_parallel_chains = 1
+        cfg.sample.num_iterations = 5000 # after burn-in
+        cfg.sample.burn_in = 0
 
         cfg.sample.average_results_over_trials = 32
         cfg.sample.save_samples = True

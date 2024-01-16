@@ -16,6 +16,7 @@ import wandb
 from discriminator_models import create_simple_discriminator, log_plot
 from sampling import metropolis_hastings_with_momentum, plot_samples_with_density
 from trainers.utils import SamplesDataset, numpy_collate
+from sampling.metrics import ess, gelman_rubin_r
 
 from logistic_regression import (
     plot_logistic_regression_samples,
@@ -429,7 +430,7 @@ class TrainerLogisticRegression:
             fig = self.cfg.figure_path / str(np.random.randint(999999))
             plot_logistic_regression_samples(
                     samples[:self.cfg.log.samples_to_plot],
-                    num_chains=parallel_chains,
+                    num_chains=None,
                     index=index,
                     name=fig # Path(f"samples_logistic_regression_{index}.png"),
                     )
@@ -477,8 +478,13 @@ class TrainerLogisticRegression:
 
             wandb.log({"acceptance rate": ar})
 
-            # predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
-            # wandb.log({"Accuracy:": np.mean(predictions == self.t.astype(int))})
+            esss = []
+            for i in range(self.density.dim):
+                eff_ess = ess(samples[:1000, i], self.density.mean()[i], self.density.std()[i])
+                esss.append(eff_ess)
+                wandb.log({f"ESS w_{i}": eff_ess})
+            wandb.log({f"Minimum ESS (1000 max)": np.min(esss)})
+            wandb.log({f"Average ESS (1000 max)": np.mean(esss)})
 
         return samples, ar
 
