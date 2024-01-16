@@ -17,7 +17,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_dir = pathlib.Path("./checkpoints")
     cfg.checkpoint_name = "debug"
-    cfg.overwrite = True
+    cfg.overwrite = False
 
     # bootstrap with hmc
     cfg.hmc_sample_dir = pathlib.Path("./hmc_samples") 
@@ -28,7 +28,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Target density
     cfg.target_density = ConfigDict()
-    cfg.target_density.name = "hamiltonian_ring"
+    cfg.target_density.name = "heart"
 
     # Wandb
     cfg.wandb = ConfigDict()
@@ -62,7 +62,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.train.num_epochs = 100
     cfg.train.num_epochs_hmc_bootstrap = 200
     cfg.train.num_AR_steps = 1
-    cfg.train.num_adversarial_steps = 2
+    cfg.train.num_adversarial_steps = 1
     cfg.train.bootstrap_with_hmc = True
     
 
@@ -76,7 +76,6 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Dataset
     cfg.dataset = ConfigDict()
-    cfg.dataset.num_covariates = 4
     cfg.dataset.name = "heart"
 
     if mode == "sample":
