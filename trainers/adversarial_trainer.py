@@ -482,7 +482,7 @@ class TrainerLogisticRegression:
             for i in range(self.density.dim):
                 eff_ess = ess(samples[:1000, i], self.density.mean()[i], self.density.std()[i])
                 esss.append(eff_ess)
-                wandb.log({f"ESS w_{i}": eff_ess})
+                # wandb.log({f"ESS w_{i}": eff_ess})
             wandb.log({f"Minimum ESS (1000 max)": np.min(esss)})
             wandb.log({f"Average ESS (1000 max)": np.mean(esss)})
 
