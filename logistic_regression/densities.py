@@ -6,7 +6,7 @@ from jax.scipy.special import expit
 
 
 def sigma(x):
-    return 1 - expit(x)
+    return expit(x)
 
 
 def normal(x, inv_sigma):
@@ -69,28 +69,30 @@ def get_predictions(X, samples):
     return (predictions > 0.5).astype(int)
 
 
-def plot_gradients_logistic_regression_density(lim, w, grad_potential_fn, name=None):
+def plot_gradients_logistic_regression_density(lim, w, d, grad_potential_fn, name=None):
     y = jnp.linspace(-lim, lim, 30)
     y, z = jnp.meshgrid(y, y)
     Z = jnp.stack([y, z], axis=-1).reshape(30 * 30, 2)
-    QP = jnp.concatenate([Z, jnp.ones((30 * 30, 4)) * 0.5], axis=-1)
-    grads = grad_potential_fn(QP[:, :3])
+    QP = jnp.concatenate([Z, jnp.ones((30 * 30, d-2)) * 0.5], axis=-1)
+    grads = grad_potential_fn(QP)
     plt.quiver(QP[:, 0], QP[:, 1], grads[:, 0], grads[:, 1])
-    plt.scatter(w[0], w[1], s=5, c="r")
+    if w is not None:
+        plt.scatter(w[0], w[1], s=5, c="r")
     if name is not None:
         plt.savefig(name)
     plt.close()
 
 
-def plot_density_logistic_regression(lim, w, density, name=None):
+def plot_density_logistic_regression(lim, w, d, density, name=None):
     y = jnp.linspace(-lim, lim, 30)
     y, z = jnp.meshgrid(y, y)
     Z = jnp.stack([y, z], axis=-1).reshape(30 * 30, 2)
-    QP = jnp.concatenate([Z, jnp.ones((30 * 30, 4)) * 0.5], axis=-1)
+    QP = jnp.concatenate([Z, jnp.ones((30 * 30, 2*d-2)) * 0.5], axis=-1)
     plt.imshow(
         density(QP).reshape(30, 30), extent=(-lim, lim, -lim, lim), origin="lower", cmap="viridis"
     )
-    plt.scatter(w[0], w[1], s=5, c="r")
+    if w is not None:
+        plt.scatter(w[0], w[1], s=5, c="r")
     if name is not None:
         plt.savefig(name)
     plt.close()

@@ -224,7 +224,6 @@ class Trainer:
         self.L_state = ckpt["L"]
         self.D_state = ckpt["D"]
 
-
 class TrainerLogisticRegression:
     def __init__(
         self,
@@ -233,9 +232,8 @@ class TrainerLogisticRegression:
         wandb_log,
         checkpoint_dir,
         checkpoint_name,
-        X,
-        t,
         seed,
+        hmc_samples=None,
     ):
         self.rng = jax.random.PRNGKey(seed)
 
@@ -246,8 +244,8 @@ class TrainerLogisticRegression:
         )
 
         self.cfg = cfg
-        self.X = X
-        self.t = t
+
+        self.hmc_samples = hmc_samples
 
         self.init_model()
         self.create_train_steps()
@@ -307,28 +305,39 @@ class TrainerLogisticRegression:
 
         self.minimize_adversarial_loss_step = jax.jit(minimize_adversarial_loss_step)
 
-    def create_data_loader(self, key, epoch_idx):
-        key, subkey = jax.random.split(key)
+    def create_data_loader(self, key, epoch_idx, hmc_samples=False):
 
-        samples, _ = self.sample(
-            rng=subkey,
-            n=self.cfg.train.num_resampling_steps,
-            burn_in=self.cfg.train.resampling_burn_in,
-            parallel_chains=self.cfg.train.num_resampling_parallel_chains,
-            name=None,  # f"samples_in_data_loader_epoch_{epoch_idx}.png",
-        )
+        if hmc_samples:
+            dataset = SamplesDataset(np.array(self.hmc_samples))
+            self.data_loader = DataLoader(
+                dataset, batch_size=self.cfg.train.batch_size, shuffle=True, collate_fn=numpy_collate
+            )
+            return key
+        
+        else:
+            key, subkey = jax.random.split(key)
+            samples, ar = self.sample(
+                rng=subkey,
+                n=self.cfg.train.num_resampling_steps,
+                burn_in=self.cfg.train.resampling_burn_in,
+                parallel_chains=self.cfg.train.num_resampling_parallel_chains,
+                name=None,  # f"samples_in_data_loader_epoch_{epoch_idx}.png",
+            )
 
-        dataset = SamplesDataset(np.array(samples))
-        self.data_loader = DataLoader(
-            dataset, batch_size=self.cfg.train.batch_size, shuffle=True, collate_fn=numpy_collate
-        )
+            dataset = SamplesDataset(np.array(samples))
+            self.data_loader = DataLoader(
+                dataset, batch_size=self.cfg.train.batch_size, shuffle=True, collate_fn=numpy_collate
+            )
 
-        print(f'ACCEPTANCE RATE: {_}')
-
-        return key
+            print(f'ACCEPTANCE RATE: {ar}')
+            return key
 
     def train_epoch(self, epoch_idx):
-        self.rng = self.create_data_loader(self.rng, epoch_idx)
+        if self.hmc_samples is not None and epoch_idx == 0:
+            self.rng = self.create_data_loader(self.rng, epoch_idx, hmc_samples=True)
+        else:
+            self.rng = self.create_data_loader(self.rng, epoch_idx, hmc_samples=False)
+
         for i, batch in enumerate(self.data_loader):
             for _ in range(self.cfg.train.num_AR_steps):
                 self.L_state, ar_loss = self.maximize_AR_step(self.L_state, self.D_state, batch)
@@ -348,38 +357,12 @@ class TrainerLogisticRegression:
                     }
                 )
             
-                
-                # plot_histograms_logistic_regression(
-                #     samples,
-                #     i=i,
-                #     name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
-                # )
-                # plot_histograms2d_logistic_regression(
-                #     samples,
-                #     i=i,
-                #     j=i + 1,
-                #     name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
-                # )
-
-
-
-            # if i % self.cfg.log.log_every == 0 and i != 0:
-            #     _, ar = self.sample(
-            #         rng=self.rng,
-            #         n=self.cfg.log.num_steps,
-            #         burn_in=self.cfg.log.burn_in,
-            #         parallel_chains=self.cfg.log.num_parallel_chains,
-            #         name=None,  # f"samples_{epoch_idx}.png",
-            #     )
-            #     self.save_model(epoch=epoch_idx, step=i)
-
-            #     if self.wandb_log:
-            #         wandb.log({"acceptance rate": ar})
-
-                    # PLOT LOG
-                    # plot discriminator
+            # cut part
 
     def train_model(self):
+        if self.hmc_samples is not None:
+            for epoch in range(self.cfg.train.num_epochs_hmc_bootstrap):
+                self.train_epoch(epoch_idx=0)
         for epoch in range(self.cfg.train.num_epochs):
             self.train_epoch(epoch_idx=epoch)
 
@@ -392,11 +375,12 @@ class TrainerLogisticRegression:
             density=self.density,
             d=self.cfg.kernel.d,
             n=n,
-            cov_p=jnp.eye(self.cfg.kernel.d) * 0.01,
+            cov_p=jnp.eye(self.cfg.kernel.d),
             parallel_chains=parallel_chains,
             burn_in=burn_in,
             rng=rng,
-            initial_std=0.1
+            initial_std=1.,
+            starting_points=self.hmc_samples,
         )
         logging.info(f"Sampling took {time.time() - start_time} seconds")
 
@@ -422,8 +406,8 @@ class TrainerLogisticRegression:
                     name=self.cfg.figure_path / Path(f"histograms2d_logistic_regression_{index}.png"),
                 )
 
-        predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
-        logging.info(f"Accuracy: {np.mean(predictions == self.t.astype(int))}")
+        # predictions = get_predictions(self.X, samples[:, : self.X.shape[1]])
+        # logging.info(f"Accuracy: {np.mean(predictions == self.t.astype(int))}")
         
         if self.wandb_log:
 
@@ -508,3 +492,41 @@ def adversarial_loss(phi_params, D_state, L_state, batch):
     )
 
     return (r(Dx) * jnp.log(r(Dx))).mean()
+
+
+
+
+
+
+
+"""
+                # plot_histograms_logistic_regression(
+                #     samples,
+                #     i=i,
+                #     name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
+                # )
+                # plot_histograms2d_logistic_regression(
+                #     samples,
+                #     i=i,
+                #     j=i + 1,
+                #     name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
+                # )
+
+
+
+            # if i % self.cfg.log.log_every == 0 and i != 0:
+            #     _, ar = self.sample(
+            #         rng=self.rng,
+            #         n=self.cfg.log.num_steps,
+            #         burn_in=self.cfg.log.burn_in,
+            #         parallel_chains=self.cfg.log.num_parallel_chains,
+            #         name=None,  # f"samples_{epoch_idx}.png",
+            #     )
+            #     self.save_model(epoch=epoch_idx, step=i)
+
+            #     if self.wandb_log:
+            #         wandb.log({"acceptance rate": ar})
+
+                    # PLOT LOG
+                    # plot discriminator
+"""

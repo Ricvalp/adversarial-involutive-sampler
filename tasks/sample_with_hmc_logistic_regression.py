@@ -3,7 +3,6 @@ from pathlib import Path
 import jax
 import jax.numpy as jnp
 import numpy as np
-import pymc3 as pm
 from absl import app, logging
 from ml_collections import config_flags
 from sklearn.datasets import fetch_openml
@@ -20,6 +19,7 @@ from logistic_regression import (
     plot_histograms2d_logistic_regression,
     plot_histograms_logistic_regression,
     plot_logistic_regression_samples,
+    Heart
 )
 
 import logistic_regression.statistics as statistics
@@ -30,37 +30,21 @@ _TASK_FILE = config_flags.DEFINE_config_file("task", default="config/config.py")
 
 
 def main(_):
+
     cfg = load_cfgs(_TASK_FILE)
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
-    density_statistics = getattr(statistics, "statistics_"+cfg.dataset.name)
 
-    data = np.load(f'data/{cfg.dataset.name}/data.npy')
-    labels = np.load(f'data/{cfg.dataset.name}/labels.npy')
-    X_data = normalize_covariates(data)
-    X = X_data[:, : cfg.dataset.num_covariates]
-    X = jnp.concatenate([X, jnp.ones((X.shape[0], 1))], axis=1)
-    t = labels[:, 0]
+    density = Heart(batch_size=cfg.sample.num_parallel_chains)
+    grad_potential_fn = density.get_grad_energy_fn()
 
-    t = (t == 1).astype(int).astype(float)
-
-    # w=jnp.array([-2.5, 1.5, .5])
-    # t, X = generate_dataset(
-    #     n=25,
-    #     w=w,
-    #     rng=jax.random.PRNGKey(1)
-    # )
-
-    density = lambda x: hamiltonian(x, t, X, inv_sigma=jnp.eye(X.shape[1]) * 0.01)
-    grad_potential_fn = lambda x: grad_U(x, t, X, jnp.eye(X.shape[1]))
-
-    # plot_density_logistic_regression(l=6., w=w, density=density, name="density.png")
-    # plot_gradients_logistic_regression_density(l=6., w=w, grad_potential_fn=grad_potential_fn, name="gradients.png")
+    # plot_density_logistic_regression(lim=6., w=None, d=density.dim, density=density, name="density.png")
+    # plot_gradients_logistic_regression_density(lim=6., w=None, d=density.dim, grad_potential_fn=grad_potential_fn, name="gradients.png")
 
     samples, ar = hmc(
         density=density,
         grad_potential_fn=grad_potential_fn,
-        cov_p=jnp.eye(X.shape[1]),
-        d=X.shape[1],
+        cov_p=jnp.eye(density.dim),
+        d=density.dim,
         parallel_chains=cfg.sample.num_parallel_chains,
         num_steps=cfg.hmc.num_steps,
         step_size=cfg.hmc.step_size,
@@ -71,35 +55,47 @@ def main(_):
     )
 
     logging.info(f"Acceptance rate: {ar}")
-    for i in range(X.shape[1]):
+    for i in range(density.dim):
 
-        # logging.info(f"ESS for w_{i}: {pm.ess(np.array(samples[:, i]))}")
-        eff_ess = ess(samples[:, i], density_statistics['mu'][i], density_statistics['sigma'][i])
+        eff_ess = ess(samples[:, i], density.mean()[i], density.std()[i])
         logging.info(f"ESS w_{i}: {eff_ess}")
-        # average_eff_sample_size_x.append(eff_ess_x)
 
-    for i in range(X.shape[1] - 1):
+    for i in range(density.dim // 4):
         plot_logistic_regression_samples(
             samples,
-            # i=i,
-            # j=i + 1,
-            num_chains=None, # cfg.sample.num_parallel_chains,
+            num_chains=cfg.sample.num_parallel_chains if cfg.sample.num_parallel_chains > 2 else None,
+            index=i,
             name=cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
         )
         plot_histograms_logistic_regression(
             samples,
-            i=i,
+            index=i,
             name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
         )
         plot_histograms2d_logistic_regression(
             samples,
-            i=i,
-            j=i + 1,
+            index=i,
             name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
         )
 
-    predictions = get_predictions(X, samples[:, : X.shape[1]])
-    logging.info(f"Accuracy: {np.mean(predictions == t.astype(int))}")
+
+    # data = np.load(f'data/{cfg.dataset.name}/data.npy')
+    # labels = np.load(f'data/{cfg.dataset.name}/labels.npy')
+    # X_data = normalize_covariates(data)
+    # X = X_data[:, : cfg.dataset.num_covariates]
+    # X = jnp.concatenate([X, jnp.ones((X.shape[0], 1))], axis=1)
+    # t = labels[:, 0]
+    # t = (t == 1).astype(int).astype(float)
+
+    # X = jnp.concatenate([density.data[0], jnp.ones((density.data[0].shape[0], 1))], axis=1)
+    # predictions = get_predictions(X, samples[:, : density.dim])
+    # logging.info(f"Accuracy: {np.mean(predictions == density.labels[:, 0].astype(int))}")
+
+
+    # save samples to a file
+    if cfg.sample.save_samples:
+        cfg.sample.hmc_sample_dir.mkdir(parents=True, exist_ok=True)
+        np.save(cfg.sample.hmc_sample_dir / Path(f"hmc_samples_{cfg.dataset.name}.npy"), samples)
 
     assert True
 

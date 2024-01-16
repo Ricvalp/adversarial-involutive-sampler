@@ -19,6 +19,9 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.checkpoint_name = "debug"
     cfg.overwrite = True
 
+    # bootstrap with hmc
+    cfg.hmc_sample_dir = pathlib.Path("./hmc_samples") 
+
     # Restore checkpoint
     cfg.checkpoint_epoch = 7
     cfg.checkpoint_step = 0
@@ -26,7 +29,6 @@ def get_config(mode: Literal["train", "sample"] = None):
     # Target density
     cfg.target_density = ConfigDict()
     cfg.target_density.name = "hamiltonian_ring"
-
 
     # Wandb
     cfg.wandb = ConfigDict()
@@ -39,7 +41,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.kernel.num_flow_layers = 5
     cfg.kernel.num_layers = 2
     cfg.kernel.num_hidden = 32
-    cfg.kernel.d = 5
+    cfg.kernel.d = 14
 
     # Discriminator
     cfg.discriminator = ConfigDict()
@@ -57,9 +59,12 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.train.num_resampling_parallel_chains = 1000
     cfg.train.resampling_burn_in = 100
     cfg.train.batch_size = 4096
-    cfg.train.num_epochs = 100
-    cfg.train.num_AR_steps = 2
+    cfg.train.num_epochs = 1000
+    cfg.train.num_epochs_hmc_bootstrap = 20
+    cfg.train.num_AR_steps = 1
     cfg.train.num_adversarial_steps = 1
+    cfg.train.bootstrap_with_hmc = True
+    
 
     # Log
     cfg.log = ConfigDict()
@@ -71,7 +76,6 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Dataset
     cfg.dataset = ConfigDict()
-    # cfg.dataset.test_split = 150
     cfg.dataset.num_covariates = 4
     cfg.dataset.name = "heart"
 
@@ -80,16 +84,18 @@ def get_config(mode: Literal["train", "sample"] = None):
         # Sample
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
-        cfg.sample.num_parallel_chains = 1
+        cfg.sample.num_parallel_chains = 100
         cfg.sample.num_iterations = 5000  # after burn-in
         cfg.sample.burn_in = 1000
 
         cfg.sample.average_results_over_trials = 32
+        cfg.sample.save_samples = True
+        cfg.sample.hmc_sample_dir = pathlib.Path("./hmc_samples") 
 
         # HMC
         cfg.hmc = ConfigDict()
         cfg.hmc.potential_function_name = "ring"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.005
+        cfg.hmc.step_size = 0.05
 
     return cfg
