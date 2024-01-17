@@ -263,13 +263,13 @@ class TrainerLogisticRegression:
             num_layers_eta=self.cfg.discriminator.num_layers_eta,
             num_hidden_eta=self.cfg.discriminator.num_hidden_eta,
             activation=self.cfg.discriminator.activation,
-            d=self.cfg.kernel.d,
+            d=self.density.dim,
         )
 
         self.rng, init_rng, init_points_rng = jax.random.split(self.rng, 3)
 
         discriminator_params = discriminator.init(
-            init_rng, jax.random.normal(init_points_rng, (100, 2 * self.cfg.kernel.d))
+            init_rng, jax.random.normal(init_points_rng, (100, 2 * self.density.dim))
         )["params"]
 
         theta_params = discriminator_params["L"]
@@ -384,12 +384,12 @@ class TrainerLogisticRegression:
         kernel_fn = jax.jit(lambda x: self.L_state.apply_fn({"params": self.L_state.params}, x))
         logging.info("Sampling...")
         start_time = time.time()
-        samples, ar = metropolis_hastings_with_momentum(
+        samples, ar, t = metropolis_hastings_with_momentum(
             kernel=kernel_fn,
             density=self.density,
-            d=self.cfg.kernel.d,
+            d=self.density.dim,
             n=n,
-            cov_p=jnp.eye(self.cfg.kernel.d),
+            cov_p=jnp.eye(self.density.dim),
             parallel_chains=parallel_chains,
             burn_in=burn_in,
             rng=rng,

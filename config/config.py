@@ -17,7 +17,7 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.figure_path = pathlib.Path("./figures") / datetime.now().strftime("%Y%m%d-%H%M%S")
     cfg.checkpoint_dir = pathlib.Path("./checkpoints")
     cfg.checkpoint_name = "debug"
-    cfg.overwrite = False
+    cfg.overwrite = True
 
     # bootstrap with hmc
     cfg.hmc_sample_dir = pathlib.Path("./hmc_samples") 
@@ -28,7 +28,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Target density
     cfg.target_density = ConfigDict()
-    cfg.target_density.name = "german"
+    cfg.target_density.name = "ring"
 
     # Wandb
     cfg.wandb = ConfigDict()
