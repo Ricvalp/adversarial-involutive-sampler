@@ -115,9 +115,10 @@ def hmc(
         if i >= burn_in:
             samples.append(x)
             ars.append(ar)
-    logging.info(f"Sampling done. Time taken: {time.time() - time_start}")
+    t = time.time() - time_start
+    logging.info(f"Sampling done. Time taken: {t}")
 
-    return np.vstack(samples), np.array(ars).mean()
+    return np.vstack(samples), np.array(ars).mean(), t
 
 # returns also hamiltonian trajectories
 

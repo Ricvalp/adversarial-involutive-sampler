@@ -28,7 +28,7 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Target density
     cfg.target_density = ConfigDict()
-    cfg.target_density.name = "heart"
+    cfg.target_density.name = "german"
 
     # Wandb
     cfg.wandb = ConfigDict()
@@ -65,7 +65,6 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.train.num_adversarial_steps = 1
     cfg.train.bootstrap_with_hmc = True
     
-
     # Log
     cfg.log = ConfigDict()
     cfg.log.log_every = 500
@@ -76,18 +75,18 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Dataset
     cfg.dataset = ConfigDict()
-    cfg.dataset.name = "heart"
+    cfg.dataset.name = "German"
 
     if mode == "sample":
 
         # Sample
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
-        cfg.sample.num_parallel_chains = 1
+        cfg.sample.num_parallel_chains = 10
         cfg.sample.num_iterations = 5000 # after burn-in
-        cfg.sample.burn_in = 0
+        cfg.sample.burn_in = 1000
 
-        cfg.sample.average_results_over_trials = 32
+        cfg.sample.average_results_over_trials = 1
         cfg.sample.save_samples = True
         cfg.sample.hmc_sample_dir = pathlib.Path("./hmc_samples") 
 
@@ -95,6 +94,6 @@ def get_config(mode: Literal["train", "sample"] = None):
         cfg.hmc = ConfigDict()
         cfg.hmc.potential_function_name = "ring"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.05
+        cfg.hmc.step_size = 0.1
 
     return cfg

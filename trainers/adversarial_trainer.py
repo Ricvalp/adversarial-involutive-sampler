@@ -23,7 +23,6 @@ from logistic_regression import (
     plot_histograms_logistic_regression,
     plot_histograms2d_logistic_regression,
     plot_first_kernel_iteration,
-    get_predictions,
     )
 
 class Trainer:

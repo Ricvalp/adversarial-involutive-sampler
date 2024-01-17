@@ -80,9 +80,10 @@ def metropolis_hastings_with_momentum(
         if i >= burn_in:
             samples.append(x)
             ars.append(ar)
-    logging.info(f"Sampling done. Time taken: {time.time() - time_start}")
+    t = time.time() - time_start
+    logging.info(f"Sampling done. Time taken: {t}")
 
-    return jnp.vstack(samples), jnp.array(ars).mean()
+    return jnp.vstack(samples), jnp.array(ars).mean(), t
 
 
 

@@ -2,7 +2,6 @@ from absl import app
 from ml_collections import config_flags
 from pathlib import Path
 
-import jax.numpy as jnp
 import numpy as np
 
 import wandb
@@ -11,9 +10,6 @@ from trainers import TrainerLogisticRegression
 
 from config import load_cfgs
 from logistic_regression import (
-    get_predictions,
-    hamiltonian,
-    normalize_covariates,
     Heart,
 )
 
@@ -27,14 +23,9 @@ def main(_):
     cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     if cfg.wandb.use:
-        # os.environ["WANDB_SILENT"] = "true"
         wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, config=cfg)
 
-
     density = Heart(batch_size=cfg.train.num_resampling_parallel_chains)
-
-    # data = np.load(f'data/{cfg.dataset.name}/data.npy')
-    # labels = np.load(f'data/{cfg.dataset.name}/labels.npy')
 
     if cfg.train.bootstrap_with_hmc:
         hmc_samples = np.load(cfg.hmc_sample_dir / Path(f"hmc_samples_{cfg.dataset.name}.npy"))
