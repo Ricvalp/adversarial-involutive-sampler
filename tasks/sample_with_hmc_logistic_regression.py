@@ -7,6 +7,8 @@ from absl import app, logging
 from ml_collections import config_flags
 
 from config import load_cfgs
+
+import logistic_regression
 from logistic_regression import (
     plot_density_logistic_regression,
     plot_gradients_logistic_regression_density,
@@ -30,7 +32,9 @@ def main(_):
     cfg = load_cfgs(_TASK_FILE)
     cfg.figure_path.mkdir(parents=True, exist_ok=True)
 
-    density = German(batch_size=cfg.sample.num_parallel_chains)
+    # density = German(batch_size=cfg.sample.num_parallel_chains)
+    density = getattr(logistic_regression, cfg.dataset.name)(batch_size=cfg.sample.num_parallel_chains)
+
     grad_potential_fn = density.get_grad_energy_fn()
 
     # average_acceptance_rate = []
@@ -44,7 +48,7 @@ def main(_):
         samples, ar, t = hmc(
             density=density,
             grad_potential_fn=grad_potential_fn,
-            cov_p=jnp.eye(density.dim),
+            cov_p=jnp.eye(density.dim)* 1.,
             d=density.dim,
             parallel_chains=cfg.sample.num_parallel_chains,
             num_steps=cfg.hmc.num_steps,
@@ -63,11 +67,11 @@ def main(_):
         #     logging.info(f"ESS w_{i}: {eff_ess}")
 
         # for i in range(density.dim // 4):
-        #     plot_logistic_regression_samples(
-        #         samples,
-        #         num_chains=cfg.sample.num_parallel_chains if cfg.sample.num_parallel_chains > 2 else None,
-        #         index=i,
-        #         name=cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
+        #    plot_logistic_regression_samples(
+        #        samples,
+        #        num_chains=cfg.sample.num_parallel_chains if cfg.sample.num_parallel_chains > 2 else None,
+        #        index=i,
+        #        name=cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
         #     )
         #     plot_histograms_logistic_regression(
         #         samples,

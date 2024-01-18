@@ -376,7 +376,6 @@ class TrainerLogisticRegression:
                     name=None
                     )
 
-
         for epoch in range(epoch, self.cfg.train.num_epochs):
             self.train_epoch(epoch_idx=epoch)
 

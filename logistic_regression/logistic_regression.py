@@ -105,7 +105,7 @@ class BayesianLogisticRegression(Energy):
                     self.x_dim,
                     self.y_dim) + self.potential_fn(
                         v[:, self.dim:],
-                        jnp.eye(self.dim)
+                        jnp.eye(self.dim) * 1.
                         )
             
             # Gradient of the energy function

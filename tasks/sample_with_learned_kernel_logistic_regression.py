@@ -36,7 +36,7 @@ def main(_):
     hmc_samples = np.load(cfg.hmc_sample_dir / Path(f"hmc_samples_{cfg.dataset.name}.npy"))
 
     checkpoint_path = os.path.join(
-        os.path.join(cfg.checkpoint_dir, cfg.target_density.name), cfg.checkpoint_name
+        os.path.join(cfg.checkpoint_dir, cfg.dataset.name), cfg.checkpoint_name
     )
 
     kernel_params, discriminator_params = get_params_from_checkpoint(
@@ -52,22 +52,20 @@ def main(_):
         num_layers_eta=cfg.discriminator.num_layers_eta,
         num_hidden_eta=cfg.discriminator.num_hidden_eta,
         activation=cfg.discriminator.activation,
-        d=cfg.kernel.d,
+        d=density.dim # cfg.kernel.d,
     )
 
     kernel = create_henon_flow(
         num_flow_layers=cfg.kernel.num_flow_layers,
         num_hidden=cfg.kernel.num_hidden,
         num_layers=cfg.kernel.num_layers,
-        d=cfg.kernel.d,
+        d=density.dim # cfg.kernel.d,
     )
 
     kernel_fn = jax.jit(lambda x: kernel.apply(kernel_params, x))
 
     average_acceptance_rate = []
-    average_eff_sample_size = []
     their_average_eff_sample_size = []
-    
     average_ess_per_second = []
 
     chains = []
@@ -78,8 +76,8 @@ def main(_):
         samples, ar, t = metropolis_hastings_with_momentum(
             kernel_fn,
             density,
-            cov_p=jnp.eye(cfg.kernel.d),
-            d=cfg.kernel.d,
+            cov_p=jnp.eye(density.dim), # cfg.kernel.d),
+            d=density.dim, # cfg.kernel.d,
             parallel_chains=cfg.sample.num_parallel_chains,
             n=cfg.sample.num_iterations,
             burn_in=cfg.sample.burn_in,
@@ -90,35 +88,28 @@ def main(_):
         logging.info(f"Acceptance rate: {ar}")
         average_acceptance_rate.append(ar)
 
-        # plot_logistic_regression_samples(
-        #     samples,
-        #     num_chains=None, # cfg.sample.num_parallel_chains,
-        #     index=0,
-        #     name= cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
-        #     )
-        # plot_histograms_logistic_regression(
-        #         samples,
-        #         index=0,
-        #         name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
-        #     )
-        # plot_histograms2d_logistic_regression(
-        #         samples,
-        #         index=0,
-        #         name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
-        #     )
-        # plot_first_kernel_iteration(
-        #         kernel=kernel_fn,
-        #         starting_points=hmc_samples,
-        #         index=0,
-        #         name=cfg.figure_path / Path(f"first_kernel_iteration_{i}.png"),
-        #     )
-        
-        esss = []
-        for i in range(density.dim):
-            eff_ess = ess(samples[:, i], density.mean()[i], density.std()[i])
-            esss.append(eff_ess)
-            logging.info(f"ESS w_{i}: {eff_ess}")
-        average_eff_sample_size.append(esss)
+        plot_logistic_regression_samples(
+            samples,
+            num_chains=None, # cfg.sample.num_parallel_chains,
+            index=0,
+            name= cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
+            )
+        plot_histograms_logistic_regression(
+                samples,
+                index=0,
+                name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
+            )
+        plot_histograms2d_logistic_regression(
+                samples,
+                index=0,
+                name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
+            )
+        plot_first_kernel_iteration(
+                kernel=kernel_fn,
+                starting_points=hmc_samples,
+                index=0,
+                name=cfg.figure_path / Path(f"first_kernel_iteration_{i}.png"),
+            )
 
         their_eff_ess = effective_sample_size(
                 samples[None, :, :density.dim],
@@ -131,8 +122,6 @@ def main(_):
         
         average_ess_per_second.append(their_eff_ess / t)
 
-        
-        assert True
 
         # eff_ess_x = ess(samples[:, 0], density.mean()[0], density_s['sigma'][0])
         # logging.info(f"ESS x: {eff_ess_x}")
@@ -155,10 +144,6 @@ def main(_):
 
     # chains = np.array(chains)[:, :, :2]
     # logging.info(f"GR R: {gelman_rubin_r(chains)}")
-    
-    average_eff_sample_size = np.array(average_eff_sample_size)
-    std_eff_sample_size = np.std(average_eff_sample_size, axis=0)
-    average_eff_sample_size = np.mean(average_eff_sample_size, axis=0)
 
     their_average_eff_sample_size = np.array(their_average_eff_sample_size)
     their_std_eff_sample_size = np.std(their_average_eff_sample_size, axis=0)
@@ -168,9 +153,6 @@ def main(_):
     std_ess_per_second = np.std(average_ess_per_second, axis=0)
     average_ess_per_second = np.mean(average_ess_per_second, axis=0)
 
-    for i in range(density.dim):
-        logging.info(f"Average ESS w_{i}: {average_eff_sample_size[i]} pm {std_eff_sample_size[i]}")
-    
     logging.info("--------------")
 
     for i in range(density.dim):
