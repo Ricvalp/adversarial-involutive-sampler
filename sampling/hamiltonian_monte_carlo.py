@@ -55,8 +55,6 @@ jit_hmc_kernel = jax.jit(
     ),
 )
 
-
-
 def hmc(
     density,
     grad_potential_fn,
@@ -69,6 +67,7 @@ def hmc(
     burn_in=100,
     initial_std=1.,
     rng=jax.random.PRNGKey(42),
+    trace_dir=None,
 ):
     first_init_subkey, second_init_subkey, sampling_subkey = jax.random.split(rng, 3)
 
@@ -83,7 +82,6 @@ def hmc(
         axis=1,
     )
 
-    logging.info("Jitting HMC kernel...")
     t = time.time()
     jit_hmc_kernel(
         x,
@@ -96,6 +94,27 @@ def hmc(
         parallel_chains=parallel_chains,
     )
     logging.info(f"Jitting done. Time taken: {time.time() - t}")
+
+    if trace_dir is not None:
+        jax.profiler.start_trace(log_dir=trace_dir)
+        for _ in range(10):
+            # jit_hmc_kernel(
+            #     x,
+            #     sampling_subkey,
+            #     cov_p,
+            #     density,
+            #     num_steps,
+            #     step_size,
+            #     grad_potential_fn,
+            #     parallel_chains=parallel_chains,
+            # )
+            # Run the operations to be profiled
+            key = jax.random.PRNGKey(0)
+            x = jax.random.normal(key, (5000, 5000))
+            y = x @ x
+            y.block_until_ready()
+
+        jax.profiler.stop_trace()
 
     samples = []
     ars = []

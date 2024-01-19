@@ -88,28 +88,28 @@ def main(_):
         logging.info(f"Acceptance rate: {ar}")
         average_acceptance_rate.append(ar)
 
-        plot_logistic_regression_samples(
-            samples,
-            num_chains=None, # cfg.sample.num_parallel_chains,
-            index=0,
-            name= cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
-            )
-        plot_histograms_logistic_regression(
-                samples,
-                index=0,
-                name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
-            )
-        plot_histograms2d_logistic_regression(
-                samples,
-                index=0,
-                name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
-            )
-        plot_first_kernel_iteration(
-                kernel=kernel_fn,
-                starting_points=hmc_samples,
-                index=0,
-                name=cfg.figure_path / Path(f"first_kernel_iteration_{i}.png"),
-            )
+        # plot_logistic_regression_samples(
+        #     samples,
+        #     num_chains=None, # cfg.sample.num_parallel_chains,
+        #     index=0,
+        #     name= cfg.figure_path / Path(f"samples_logistic_regression_{i}.png"),
+        #     )
+        # plot_histograms_logistic_regression(
+        #         samples,
+        #         index=0,
+        #         name=cfg.figure_path / Path(f"histograms_logistic_regression_{i}.png"),
+        #     )
+        # plot_histograms2d_logistic_regression(
+        #         samples,
+        #         index=0,
+        #         name=cfg.figure_path / Path(f"histograms2d_logistic_regression_{i}.png"),
+        #     )
+        # plot_first_kernel_iteration(
+        #         kernel=kernel_fn,
+        #         starting_points=hmc_samples,
+        #         index=0,
+        #         name=cfg.figure_path / Path(f"first_kernel_iteration_{i}.png"),
+        #     )
 
         their_eff_ess = effective_sample_size(
                 samples[None, :, :density.dim],

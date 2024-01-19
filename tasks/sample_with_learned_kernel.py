@@ -53,7 +53,7 @@ def main(_):
         xlim_p=3,
         ylim_p=3,
         n=100,
-        x_0=jnp.array([6.0, 0.0]),
+        x_0=jnp.array([.0, .0]),
         p_0=0.0,
         p_1=0.0,
         name=cfg.figure_path / Path("discriminator"),

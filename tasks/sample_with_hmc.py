@@ -5,7 +5,6 @@ import jax.numpy as jnp
 import numpy as np
 from absl import app, logging
 from ml_collections import config_flags
-import pymc3 as pm
 
 import densities
 from config import load_cfgs
@@ -44,7 +43,7 @@ def main(_):
 
     for i in range(cfg.sample.average_results_over_trials):
 
-        samples, ar, trs = hmc_debug(
+        samples, ar, t = hmc(
             density=density,
             grad_potential_fn=grad_potential_fn,
             cov_p=jnp.eye(cfg.sample.d),

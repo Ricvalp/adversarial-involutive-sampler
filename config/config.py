@@ -20,7 +20,10 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.overwrite = True
 
     # bootstrap with hmc
-    cfg.hmc_sample_dir = pathlib.Path("./hmc_samples") 
+    cfg.hmc_sample_dir = pathlib.Path("./hmc_samples")
+
+    # tracing
+    cfg.trace_dir = pathlib.Path("./traces")
 
     # Restore checkpoint
     cfg.checkpoint_epoch = 7
@@ -40,15 +43,15 @@ def get_config(mode: Literal["train", "sample"] = None):
     cfg.kernel = ConfigDict()
     cfg.kernel.num_flow_layers = 5
     cfg.kernel.num_layers = 2
-    cfg.kernel.num_hidden = 64
+    cfg.kernel.num_hidden = 32
     cfg.kernel.d = 2
 
     # Discriminator
     cfg.discriminator = ConfigDict()
     cfg.discriminator.num_layers_psi = 3
-    cfg.discriminator.num_hidden_psi = 128
+    cfg.discriminator.num_hidden_psi = 32
     cfg.discriminator.num_layers_eta = 3
-    cfg.discriminator.num_hidden_eta = 128
+    cfg.discriminator.num_hidden_eta = 32
     cfg.discriminator.activation = "relu"
 
     # Train
@@ -75,25 +78,25 @@ def get_config(mode: Literal["train", "sample"] = None):
 
     # Dataset
     cfg.dataset = ConfigDict()
-    cfg.dataset.name = "German"
+    cfg.dataset.name = "Australian"
 
     if mode == "sample":
 
         # Sample
         cfg.sample = ConfigDict()
         cfg.sample.d = 2
-        cfg.sample.num_parallel_chains = 1
+        cfg.sample.num_parallel_chains = 100
         cfg.sample.num_iterations = 5000 # after burn-in
         cfg.sample.burn_in = 1000
 
-        cfg.sample.average_results_over_trials = 5
+        cfg.sample.average_results_over_trials = 10
         cfg.sample.save_samples = False
         cfg.sample.hmc_sample_dir = pathlib.Path("./hmc_samples") 
 
         # HMC
         cfg.hmc = ConfigDict()
-        cfg.hmc.potential_function_name = "ring"
+        cfg.hmc.potential_function_name = "mog6"
         cfg.hmc.num_steps = 40
-        cfg.hmc.step_size = 0.01
+        cfg.hmc.step_size = 0.1
 
     return cfg
